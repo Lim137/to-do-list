@@ -8,31 +8,80 @@
       <button @click="filter = ''">X</button>
     </div>
     <hr />
-    <div v-for="task in filteredTasks" :key="task.taskId">
-      <div v-if="!task.editing">
-        <div>
-          <label>
-            <input
-              type="checkbox"
-              name="task"
-              :id="task.id"
-              v-model="task.checked"
-              @change="updateTask(task)"
-            />
-            {{ task.title }}
-          </label>
+    <div v-if="filter">
+      <div v-for="task in filteredTasks" :key="task.id">
+        <div v-if="!task.editing">
+          <div>
+            <label>
+              <input
+                type="checkbox"
+                name="task"
+                :id="task.id"
+                v-model="task.checked"
+                @change="updateTask(task)"
+              />
+              <span @click="editTask(task)">{{ task.title }}</span>
+            </label>
 
-          <button @click="editTask(task)">Редактировать</button>
-          <button class="task__delete-button" @click="deleteTask(task)">
-            Удалить
-          </button>
+            <button @click="editTask(task)">Редактировать</button>
+            <button class="task__delete-button" @click="deleteTask(task)">
+              Удалить
+            </button>
+          </div>
+        </div>
+        <div v-if="task.editing">
+          <input
+            type="text"
+            v-model="task.editingText"
+            v-focus
+            @keydown.esc="cancelEdit(task)"
+            @keydown.enter="saveTask(task)"
+          />
+          <button @click="saveTask(task)">Сохранить</button>
+          <button @click="cancelEdit(task)">Отмена</button>
         </div>
       </div>
-      <div v-if="task.editing">
-        <input type="text" v-model="task.editingText" v-focus />
-        <button @click="saveTask(task)">Сохранить</button>
-        <button @click="cancelEdit(task)">Отмена</button>
-      </div>
+    </div>
+    <div v-else>
+      <draggable v-model="unsolvedTasks" :options="dragOptions" item-key="id">
+        <template #item="{ element }">
+          <div>
+            <div v-if="!element.editing">
+              <div>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="task"
+                    :id="element.id"
+                    v-model="element.checked"
+                    @change="updateTask(element)"
+                  />
+                  <span @click="editTask(element)">{{ element.title }}</span>
+                </label>
+
+                <button @click="editTask(element)">Редактировать</button>
+                <button
+                  class="task__delete-button"
+                  @click="deleteTask(element)"
+                >
+                  Удалить
+                </button>
+              </div>
+            </div>
+            <div v-if="element.editing">
+              <input
+                type="text"
+                v-model="element.editingText"
+                v-focus
+                @keydown.esc="cancelEdit(element)"
+                @keydown.enter="saveTask(element)"
+              />
+              <button @click="saveTask(element)">Сохранить</button>
+              <button @click="cancelEdit(element)">Отмена</button>
+            </div>
+          </div>
+        </template>
+      </draggable>
     </div>
     <hr />
     <div class="input-wrapper">
@@ -53,7 +102,7 @@
 </template>
 
 <script>
-// import draggable from "vuedraggable";
+import draggable from "vuedraggable";
 import { v4 as uuidv4 } from "uuid";
 import focusDirective from "./directives/focus.js";
 
@@ -61,6 +110,9 @@ export default {
   name: "App",
   directives: {
     focus: focusDirective,
+  },
+  components: {
+    draggable,
   },
   data() {
     return {
@@ -82,7 +134,7 @@ export default {
   computed: {
     filteredTasks() {
       return this.unsolvedTasks.filter((task) =>
-        task.title.toLowerCase().includes(this.filter.toLowerCase())
+        this.filterTasks(task.title, this.filter)
       );
     },
     isEmptyTaskList() {
@@ -111,6 +163,25 @@ export default {
       );
 
       localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
+    },
+    filterTasks(task, filter) {
+      task = task.toLowerCase();
+      filter = filter.toLowerCase();
+      const filterWords = filter.split(" ");
+      for (const word of filterWords) {
+        if (!task.includes(word)) {
+          return;
+        }
+      }
+      // filterWords.forEach((word) => {
+      //   if (!task.includes(word)) {
+      //     console.log(123);
+      //     console.log(task);
+      //     console.log(word);
+      //     return;
+      //   }
+      // });
+      return true;
     },
     updateTask(task) {
       if (task.checked === true) {
