@@ -173,14 +173,6 @@ export default {
           return;
         }
       }
-      // filterWords.forEach((word) => {
-      //   if (!task.includes(word)) {
-      //     console.log(123);
-      //     console.log(task);
-      //     console.log(word);
-      //     return;
-      //   }
-      // });
       return true;
     },
     updateTask(task) {
@@ -214,9 +206,6 @@ export default {
           t.editing = false;
         }
       });
-      // this.$nextTick(() => {
-      //   this.$refs.editingInput.focus();
-      // });
     },
     cancelEdit(task) {
       task.editingText = task.title;
@@ -226,7 +215,6 @@ export default {
   watch: {
     unsolvedTasks: {
       handler() {
-        console.log("enter");
         localStorage.setItem(
           "unsolvedTasks",
           JSON.stringify(this.unsolvedTasks)
