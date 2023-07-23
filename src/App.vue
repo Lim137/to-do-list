@@ -2,43 +2,84 @@
   <div class="todo-wrapper">
     <h1>TODO</h1>
     <hr />
-    <div>
-      Фильтр:
-      <input type="text" v-model="filter" :disabled="isEmptyTaskList" />
-      <button @click="filter = ''">X</button>
+    <div class="filter-block">
+      <div class="filter-block__title">Фильтр:</div>
+      <input
+        class="filter-block__input-field"
+        type="text"
+        v-model="filter"
+        :disabled="isEmptyTaskList"
+      />
+      <button class="filter-block__cancel-button" @click="filter = ''">
+        X
+      </button>
     </div>
     <hr />
-    <div v-if="filter">
-      <div v-for="task in filteredTasks" :key="task.id">
-        <div v-if="!task.editing">
-          <div>
-            <label>
-              <input
-                type="checkbox"
-                name="task"
-                :id="task.id"
-                v-model="task.checked"
-                @change="updateTask(task)"
-              />
-              <span @click="editTask(task)">{{ task.title }}</span>
-            </label>
+    <div v-if="!editingTasks">
+      <button class="edit-tasks-button" @click="editingTasks = true">
+        Редактировать
+      </button>
+    </div>
+    <div v-else>
+      <button class="edit-tasks-button" @click="editingTasks = false">
+        Отмена
+      </button>
+    </div>
+    <hr />
+    <div v-if="!editingTasks">
+      <div class="tasks-block">
+        <div v-for="(task, index) in filteredTasks" :key="task.id">
+          <div
+            v-if="!task.editing"
+            v-drag="(event) => dragHandler(event, task)"
+            :style="{
+              transform:
+                task.swipeLeftOffsetX !== 0
+                  ? `translateX(${task.swipeLeftOffsetX}px)`
+                  : task.swipeRightOffsetX !== 0
+                  ? `translateX(${task.swipeRightOffsetX}px)`
+                  : 'translateX(0px)',
+            }"
+            :class="task.swipeRightOffsetX === 0 ? 'move-transition' : ''"
+          >
+            <div class="task-block">
+              <div v-if="task.swipeRight === 1">
+                <img src="./icon/solve.png" class="task__solve-img" alt="" />
+              </div>
 
-            <button @click="editTask(task)">Редактировать</button>
-            <button class="task__delete-button" @click="deleteTask(task)">
-              Удалить
+              <button class="text-button">
+                {{ index + 1 }}. {{ task.title }}
+              </button>
+              <img
+                src="./icon/editing.png"
+                class="task__icon-edit"
+                @click="editTask(task)"
+              />
+              <img
+                v-if="task.swipeLeft === -1"
+                src="./icon/delete.png"
+                class="task__icon task__icon_delete"
+                @click="deleteTask(task)"
+                ref="deleteImg"
+              />
+            </div>
+          </div>
+          <div v-if="task.editing" class="edit-block">
+            <input
+              class="edit-block__editing-field"
+              type="text"
+              v-model="task.editingText"
+              v-focus
+              @keydown.esc="cancelEdit(task)"
+              @keydown.enter="saveTask(task)"
+            />
+            <button class="edit-block__save-button" @click="saveTask(task)">
+              Сохранить
+            </button>
+            <button class="edit-block__cancel-button" @click="cancelEdit(task)">
+              Отмена
             </button>
           </div>
-        </div>
-        <div v-if="task.editing">
-          <input
-            type="text"
-            v-model="task.editingText"
-            v-focus
-            @keydown.esc="cancelEdit(task)"
-            @keydown.enter="saveTask(task)"
-          />
-          <button @click="saveTask(task)">Сохранить</button>
-          <button @click="cancelEdit(task)">Отмена</button>
         </div>
       </div>
     </div>
@@ -59,12 +100,12 @@
                   <span @click="editTask(element)">{{ element.title }}</span>
                 </label>
 
-                <button @click="editTask(element)">Редактировать</button>
+                <button @click="editTask(element)">edit</button>
                 <button
                   class="task__delete-button"
                   @click="deleteTask(element)"
                 >
-                  Удалить
+                  delete
                 </button>
               </div>
             </div>
@@ -91,6 +132,12 @@
           v-model="taskTitle"
           @keydown.enter="add"
           class="input-wrapper__input"
+        />
+        <img
+          src="./icon/voice-button.png"
+          v-if="isEnabledSpeechApi"
+          @click="startVoiceRecognition"
+          alt=""
         />
         <button @click="taskTitle = ''" class="input-wrapper__clear-button">
           X
@@ -123,6 +170,9 @@ export default {
         animation: 150,
       },
       filter: "",
+      isDragging: false,
+      editingTasks: false,
+      isEnabledSpeechApi: false,
     };
   },
   created: function () {
@@ -130,6 +180,8 @@ export default {
     if (tasksData) {
       this.unsolvedTasks = JSON.parse(tasksData);
     }
+
+    this.isEnabledSpeechApi = "webkitSpeechRecognition" in window;
   },
   computed: {
     filteredTasks() {
@@ -142,6 +194,91 @@ export default {
     },
   },
   methods: {
+    log() {
+      console.log("hello");
+    },
+
+    dragHandler(event, task) {
+      const { movement: x, dragging, memo, distance, direction } = event;
+      console.log("memo = ", memo);
+
+      // обработка стрейфа влево
+      if (task.swipeRightOffsetX === 0) {
+        if (x[0] < 0 && x[0] > -50) {
+          task.swipeLeftOffsetX = x[0];
+        }
+
+        if (task.swipeLeft === -1) {
+          if (distance >= 40 && direction[0] === 1) {
+            task.swipeLeft = 0;
+          }
+        }
+        if (task.swipeLeftOffsetX < 0) {
+          if (distance > 40 && direction[0] === -1) {
+            task.swipeLeft = -1;
+          }
+        }
+        if (!dragging) {
+          if (task.swipeLeft === -1) {
+            task.swipeLeftOffsetX = -40;
+          } else if (task.swipeLeft === 0) {
+            task.swipeLeftOffsetX = 0;
+            return;
+          }
+        }
+      }
+
+      // обработка стрейфа вправо
+      if (task.swipeLeftOffsetX === 0) {
+        if (task.swipeLeftOffsetX === 0) {
+          console.log(task.swipeLeftOffsetX);
+        }
+
+        if (x[0] > 0) {
+          task.swipeRightOffsetX = x[0];
+          if (distance > 100) {
+            task.swipeRight = 1;
+          } else {
+            task.swipeRight = 0;
+          }
+        }
+        if (!dragging) {
+          if (x[0] <= 99) {
+            task.swipeRightOffsetX = 0;
+            task.swipeRight = 0;
+            return;
+          }
+        }
+      }
+      return task.swipeLeft;
+    },
+    addToVariable(value, swipeStatus) {
+      swipeStatus += value;
+
+      // Проверяем и ограничиваем значение переменной
+      if (swipeStatus > 1) {
+        swipeStatus = 1;
+      } else if (swipeStatus < -1) {
+        swipeStatus = -1;
+      }
+      return swipeStatus;
+    },
+    startVoiceRecognition() {
+      // Начать распознавание речи
+
+      const recognition = new window.webkitSpeechRecognition();
+      recognition.lang = "ru-RU";
+
+      recognition.onresult = (event) => {
+        const taskName = event.results[0][0].transcript;
+        this.taskTitle = taskName;
+      };
+      recognition.onspeechend = () => {
+        recognition.stop();
+      };
+
+      recognition.start();
+    },
     add() {
       if (!this.taskTitle) {
         return;
@@ -153,6 +290,11 @@ export default {
         checked: false,
         editing: false,
         editingText: this.taskTitle,
+        swipeLeftOffsetX: 0,
+        showDeleteButton: false,
+        swipeLeft: 0,
+        swipeRightOffsetX: 0,
+        swipeRight: 0,
       });
       localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
       this.taskTitle = "";
@@ -176,15 +318,10 @@ export default {
       return true;
     },
     updateTask(task) {
-      if (task.checked === true) {
-        this.solvedTasks.push(task);
-        console.log(this.solvedTasks);
-        this.unsolvedTasks = this.unsolvedTasks.filter((t) => t !== task);
-        localStorage.setItem(
-          "unsolvedTasks",
-          JSON.stringify(this.unsolvedTasks)
-        );
-      }
+      this.solvedTasks.push(task);
+      console.log(this.solvedTasks);
+      this.unsolvedTasks = this.unsolvedTasks.filter((t) => t !== task);
+      localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
     },
     saveTask(task) {
       this.unsolvedTasks.forEach((t) => {
@@ -198,8 +335,6 @@ export default {
       }
     },
     editTask(task) {
-      // this.filter = "";
-
       task.editing = true;
       this.unsolvedTasks.forEach((t) => {
         if (t.title !== task.title) {
@@ -227,22 +362,90 @@ export default {
 </script>
 <style scoped>
 .todo-wrapper {
-  max-width: 800px;
+  max-width: 1600px;
   margin: 0 auto;
+  font-size: 36px;
+}
+.filter-block {
+  display: flex;
+}
+.filter-block__title {
+  font-size: 36px;
+  margin-right: 8px;
+}
+.filter-block__input-field {
+  font-size: 36px;
+}
+.filter-block__cancel-button {
+  font-size: 36px;
+}
+.edit-tasks-button {
+  font-size: 36px;
 }
 .task {
-  width: 400px;
+  width: 800px;
+}
+.task-block {
+  height: 40px;
+  display: flex;
+  margin-top: 8px;
 }
 .task__title {
-  align-self: flex-start;
-  margin-right: 5px;
+  align-self: center;
+  margin-right: 10px;
 }
-.task__delete-button {
-  align-self: flex-end;
+
+.task__icon-edit {
+  align-self: center;
+  margin-top: -4px;
+  margin-left: 6px;
+  height: 40px;
+  width: 40px;
 }
+.task__icon_delete {
+  margin-left: 6px;
+  align-self: center;
+  height: 40px;
+  width: 40px;
+}
+.task__solve-img {
+  display: flex;
+  padding-right: 6px;
+  height: 40px;
+  width: 40px;
+  align-self: center;
+}
+.tasks-block {
+  font-size: 36px;
+}
+
+.edit-block {
+  display: flex;
+}
+.edit-block__editing-field {
+  font-size: 36px;
+}
+.edit-block__save-button {
+  font-size: 36px;
+}
+.edit-block__cancel-button {
+  font-size: 36px;
+}
+
 .input-wrapper {
   display: flex;
   flex-direction: column;
+}
+
+.text-button {
+  position: relative;
+  font-size: 36px;
+  border: 0;
+  background-color: #fff;
+}
+
+.move-transition {
+  transition: transform 0.3s ease;
 }
 
 .input-wrapper__input-container {
@@ -252,13 +455,15 @@ export default {
 
 .input-wrapper__input {
   flex: 1;
+  font-size: 36px;
 }
 
 .input-wrapper__clear-button {
-  margin-left: 5px;
+  font-size: 36px;
 }
 
 .input-wrapper__add-button {
-  margin-top: 5px;
+  margin-top: 10px;
+  height: 30px;
 }
 </style>
