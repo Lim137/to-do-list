@@ -32,14 +32,6 @@
           <div
             v-if="!task.editing"
             v-drag="(event) => dragHandler(event, task)"
-            :style="{
-              transform:
-                task.swipeLeftOffsetX !== 0
-                  ? `translateX(${task.swipeLeftOffsetX}px)`
-                  : task.swipeRightOffsetX !== 0
-                  ? `translateX(${task.swipeRightOffsetX}px)`
-                  : 'translateX(0px)',
-            }"
             :class="task.swipeRightOffsetX === 0 ? 'move-transition' : ''"
           >
             <div class="task-block">
@@ -47,21 +39,40 @@
                 <img src="./icon/solve.png" class="task__solve-img" alt="" />
               </div>
 
-              <button class="text-button">
+              <button
+                class="text-button"
+                :style="{
+                  transform:
+                    task.swipeLeftOffsetX !== 0
+                      ? `translateX(${task.swipeLeftOffsetX}px)`
+                      : task.swipeRightOffsetX !== 0
+                      ? `translateX(${task.swipeRightOffsetX}px)`
+                      : 'translateX(0px)',
+                }"
+              >
                 {{ index + 1 }}. {{ task.title }}
               </button>
-              <img
-                src="./icon/editing.png"
-                class="task__icon-edit"
-                @click="editTask(task)"
-              />
-              <img
-                v-if="task.swipeLeft === -1"
-                src="./icon/delete.png"
-                class="task__icon task__icon_delete"
-                @click="deleteTask(task)"
-                ref="deleteImg"
-              />
+              <div class="task-block__image-conteiner">
+                <img
+                  src="./icon/editing.png"
+                  class="task-block__icon task__icon-edit"
+                  @click="editTask(task)"
+                  :style="{
+                    transform:
+                      task.swipeLeftOffsetX !== 0
+                        ? `translateX(${task.swipeLeftOffsetX}px)`
+                        : task.swipeRightOffsetX !== 0
+                        ? `translateX(${task.swipeRightOffsetX}px)`
+                        : 'translateX(0px)',
+                  }"
+                />
+                <img
+                  v-if="task.swipeRightOffsetX === 0"
+                  src="./icon/delete.png"
+                  class="task-block__icon task__icon-delete"
+                  @click="deleteTask(task)"
+                />
+              </div>
             </div>
           </div>
           <div v-if="task.editing" class="edit-block">
@@ -183,6 +194,15 @@ export default {
 
     this.isEnabledSpeechApi = "webkitSpeechRecognition" in window;
   },
+  mounted: function () {
+    window.addEventListener("beforeunload", this.returnTasksToStandartPosition);
+  },
+  beforeUnmount() {
+    window.removeEventListener(
+      "beforeunload",
+      this.returnTasksToStandartPosition
+    );
+  },
   computed: {
     filteredTasks() {
       return this.unsolvedTasks.filter((task) =>
@@ -194,13 +214,15 @@ export default {
     },
   },
   methods: {
-    log() {
-      console.log("hello");
+    returnTasksToStandartPosition() {
+      this.unsolvedTasks.forEach((t) => {
+        t.swipeLeft = 0;
+        t.swipeLeftOffsetX = 0;
+      });
+      localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
     },
-
     dragHandler(event, task) {
-      const { movement: x, dragging, memo, distance, direction } = event;
-      console.log("memo = ", memo);
+      const { movement: x, dragging, distance, direction } = event;
 
       // обработка стрейфа влево
       if (task.swipeRightOffsetX === 0) {
@@ -209,10 +231,11 @@ export default {
         }
 
         if (task.swipeLeft === -1) {
-          if (distance >= 40 && direction[0] === 1) {
+          if (distance >= 5 && direction[0] === 1) {
             task.swipeLeft = 0;
           }
         }
+
         if (task.swipeLeftOffsetX < 0) {
           if (distance > 40 && direction[0] === -1) {
             task.swipeLeft = -1;
@@ -227,13 +250,8 @@ export default {
           }
         }
       }
-
       // обработка стрейфа вправо
       if (task.swipeLeftOffsetX === 0) {
-        if (task.swipeLeftOffsetX === 0) {
-          console.log(task.swipeLeftOffsetX);
-        }
-
         if (x[0] > 0) {
           task.swipeRightOffsetX = x[0];
           if (distance > 100) {
@@ -250,7 +268,18 @@ export default {
           }
         }
       }
+      console.log(task.swipeLeftOffsetX);
       return task.swipeLeft;
+    },
+    getImgWidth(ref) {
+      // Проверьте, что элемент существует
+      this.$nextTick(() => {
+        if (ref) {
+          // Получите clientWidth элемента
+          const width = ref.clientWidth;
+          console.log("Ширина элемента:", width);
+        }
+      });
     },
     addToVariable(value, swipeStatus) {
       swipeStatus += value;
@@ -319,7 +348,7 @@ export default {
     },
     updateTask(task) {
       this.solvedTasks.push(task);
-      console.log(this.solvedTasks);
+      console.log("solvedTasks = ", this.solvedTasks);
       this.unsolvedTasks = this.unsolvedTasks.filter((t) => t !== task);
       localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
     },
@@ -395,19 +424,24 @@ export default {
   margin-right: 10px;
 }
 
+.task-block__image-conteiner {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+.task-block__icon {
+  width: 100%;
+  height: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
 .task__icon-edit {
-  align-self: center;
-  margin-top: -4px;
-  margin-left: 6px;
-  height: 40px;
-  width: 40px;
+  z-index: 2;
 }
-.task__icon_delete {
-  margin-left: 6px;
-  align-self: center;
-  height: 40px;
-  width: 40px;
+.task__icon-delete {
 }
+
 .task__solve-img {
   display: flex;
   padding-right: 6px;
@@ -416,6 +450,7 @@ export default {
   align-self: center;
 }
 .tasks-block {
+  overflow: hidden;
   font-size: 36px;
 }
 
@@ -447,7 +482,9 @@ export default {
 .move-transition {
   transition: transform 0.3s ease;
 }
-
+.position-transition {
+  transition: width, height 0.3s ease;
+}
 .input-wrapper__input-container {
   display: flex;
   align-items: center;
