@@ -1,198 +1,180 @@
 <template>
-  <div class="todo-wrapper">
-    <h1>TODO</h1>
-    <hr />
-    <div class="filter-block">
-      <div class="filter-block__title">Фильтр:</div>
-      <input
-        class="filter-block__input-field"
-        type="text"
-        v-model="filter"
-        :disabled="isEmptyTaskList"
-      />
-      <button class="filter-block__cancel-button" @click="filter = ''">
-        X
-      </button>
-    </div>
-    <hr />
-    <div v-if="!editingTasks">
-      <button class="edit-tasks-button" @click="editingTasks = true">
-        Редактировать
-      </button>
-    </div>
-    <div v-else>
-      <button class="edit-tasks-button" @click="editingTasks = false">
-        Отмена
-      </button>
-    </div>
-    <hr />
-    <div v-if="!editingTasks">
-      <div class="tasks-block">
-        <div v-for="(task, index) in filteredTasks" :key="task.id">
-          <div
-            v-if="!task.editing"
-            v-drag="(event) => dragHandler(event, task)"
-            :class="task.swipeRightOffsetX === 0 ? 'move-transition' : ''"
-          >
-            <div class="task-block">
-              <div v-if="task.swipeRight === 1">
-                <img src="./icon/solve.png" class="task__solve-img" alt="" />
-              </div>
+  <div class="page" @click="closeMenu">
+    <div class="todo-wrapper">
+      <header class="todo-wrapper__header">
+        <div class="first-string">
+          <div class="first-string__first-half">
+            <img
+              class="first-string__burger-icon"
+              src="./icon/burger-menu.png"
+              alt=""
+            />
+            <h1 class="first-string__title">TODO</h1>
+          </div>
+          <div class="first-string__second-half">
+            <div class="test-chart">
+              <img
+                class="first-string__chart-icon"
+                src="./icon/chart.png"
+                alt=""
+              />
+            </div>
 
-              <button
-                class="text-button"
-                :style="{
-                  transform:
-                    task.swipeLeftOffsetX !== 0
-                      ? `translateX(${task.swipeLeftOffsetX}px)`
-                      : task.swipeRightOffsetX !== 0
-                      ? `translateX(${task.swipeRightOffsetX}px)`
-                      : 'translateX(0px)',
-                }"
-              >
-                {{ index + 1 }}. {{ task.title }}
-              </button>
-              <div class="task-block__image-conteiner">
-                <img
-                  src="./icon/editing.png"
-                  class="task-block__icon task__icon-edit"
-                  @click="editTask(task)"
-                  :style="{
-                    transform:
-                      task.swipeLeftOffsetX !== 0
-                        ? `translateX(${task.swipeLeftOffsetX}px)`
-                        : task.swipeRightOffsetX !== 0
-                        ? `translateX(${task.swipeRightOffsetX}px)`
-                        : 'translateX(0px)',
-                  }"
-                />
-                <img
-                  v-if="task.swipeRightOffsetX === 0"
-                  src="./icon/delete.png"
-                  class="task-block__icon task__icon-delete"
-                  @click="deleteTask(task)"
-                />
+            <div
+              class="burger-container"
+              @click.stop
+              @click="showExtraFeatures = !showExtraFeatures"
+            >
+              <img
+                class="first-string__additionally-icon"
+                src="./icon/additionally.png"
+                alt=""
+              />
+
+              <div v-if="showExtraFeatures" class="menu">
+                <div class="menu-item">
+                  <button
+                    class="menu-item__button"
+                    @click="editingTasks = true"
+                  >
+                    Edit
+                  </button>
+                </div>
+                <div class="menu-item">
+                  <button
+                    class="menu-item__button"
+                    @click="showFindPopup = true"
+                  >
+                    Find
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div v-if="task.editing" class="edit-block">
-            <input
-              class="edit-block__editing-field"
-              type="text"
-              v-model="task.editingText"
-              v-focus
-              @keydown.esc="cancelEdit(task)"
-              @keydown.enter="saveTask(task)"
-            />
-            <button class="edit-block__save-button" @click="saveTask(task)">
-              Сохранить
-            </button>
-            <button class="edit-block__cancel-button" @click="cancelEdit(task)">
-              Отмена
-            </button>
           </div>
         </div>
+        <div class="navigation-block">
+          <button
+            class="navigation-block__button navigation-block__unsolved-tasks"
+            :class="page === 1 ? 'navigation-block__active-button' : ''"
+            @click="page = 1"
+          >
+            TO DO
+          </button>
+          <button
+            class="navigation-block__button navigation-block__solved-tasks"
+            :class="page === 2 ? 'navigation-block__active-button' : ''"
+            @click="page = 2"
+          >
+            DONE
+          </button>
+        </div>
+      </header>
+      <div
+        v-if="showFindPopup"
+        class="find-popup"
+        :class="showFindPopup ? 'closeFindPopup' : ''"
+      >
+        <filter-panel
+          :isEmptyTaskList="isEmptyTaskList"
+          @tasksFilter="changeFilter"
+          @closeFindPopup="closeFindPopup"
+        />
       </div>
-    </div>
-    <div v-else>
-      <draggable v-model="unsolvedTasks" :options="dragOptions" item-key="id">
-        <template #item="{ element }">
-          <div>
-            <div v-if="!element.editing">
-              <div>
-                <label>
-                  <input
-                    type="checkbox"
-                    name="task"
-                    :id="element.id"
-                    v-model="element.checked"
-                    @change="updateTask(element)"
-                  />
-                  <span @click="editTask(element)">{{ element.title }}</span>
-                </label>
-
-                <button @click="editTask(element)">edit</button>
-                <button
-                  class="task__delete-button"
-                  @click="deleteTask(element)"
-                >
-                  delete
-                </button>
-              </div>
-            </div>
-            <div v-if="element.editing">
-              <input
-                type="text"
-                v-model="element.editingText"
-                v-focus
-                @keydown.esc="cancelEdit(element)"
-                @keydown.enter="saveTask(element)"
+      <div class="empty-block"></div>
+      <main class="todo-wrapper__main-block">
+        <div v-if="page === 1">
+          <div v-if="editingTasks">
+            <button class="edit-tasks-button" @click="editingTasks = false">
+              Cancel
+            </button>
+          </div>
+          <div v-if="!editingTasks">
+            <div class="todo-wrapper__task-list">
+              <task-list
+                :filteredTasks="filteredTasks"
+                @solveTask="solveTask"
+                @deleteTask="deleteTask"
+                @editTask="editTask"
+                @saveTask="saveTask"
+                @cancelEdit="cancelEdit"
               />
-              <button @click="saveTask(element)">Сохранить</button>
-              <button @click="cancelEdit(element)">Отмена</button>
             </div>
           </div>
-        </template>
-      </draggable>
-    </div>
-    <hr />
-    <div class="input-wrapper">
-      <div class="input-wrapper__input-container">
-        <input
-          type="text"
-          v-model="taskTitle"
-          @keydown.enter="add"
-          class="input-wrapper__input"
-        />
-        <img
-          src="./icon/voice-button.png"
-          v-if="isEnabledSpeechApi"
-          @click="startVoiceRecognition"
-          alt=""
-        />
-        <button @click="taskTitle = ''" class="input-wrapper__clear-button">
-          X
-        </button>
+          <div v-else>
+            <draggable-task-list
+              :tasks="unsolvedTasks"
+              @updateUnsolvedTasks="updateTasks"
+              @solveTask="solveTask"
+              @deleteTask="deleteTask"
+              @editTask="editTask"
+              @saveTask="saveTask"
+              @cancelEdit="cancelEdit"
+            />
+          </div>
+        </div>
+      </main>
+      <div class="empty-block"></div>
+      <footer class="todo-wrapper__footer" v-if="page === 1">
+        <add-task-form
+          class="add-task-form"
+          :recognizedString="recognizedString"
+          @addTask="add"
+          @voiceRecognition="startVoiceRecognition"
+        ></add-task-form>
+      </footer>
+      <div v-if="page === 2">
+        <div v-for="task in solvedTasks" :key="task.id">
+          {{ task.title }}
+        </div>
       </div>
-      <button class="input-wrapper__add-button" @click="add">Add</button>
+      <button
+        @click="toggleSwitch"
+        :class="{ active: isOn }"
+        class="switch"
+      ></button>
     </div>
   </div>
 </template>
 
 <script>
-import draggable from "vuedraggable";
 import { v4 as uuidv4 } from "uuid";
-import focusDirective from "./directives/focus.js";
+
+import AddTaskForm from "./components/AddTaskForm.vue";
+import FilterPanel from "./components/FilterPanel.vue";
+import TaskList from "./components/TaskList.vue";
+import DraggableTaskList from "./components/DraggableTaskList.vue";
 
 export default {
   name: "App",
-  directives: {
-    focus: focusDirective,
-  },
+
   components: {
-    draggable,
+    AddTaskForm,
+    FilterPanel,
+    TaskList,
+    DraggableTaskList,
   },
   data() {
     return {
       unsolvedTasks: [],
-      taskTitle: "",
       solvedTasks: [],
-      dragOptions: {
-        animation: 150,
-      },
+      recognizedString: "",
       filter: "",
-      isDragging: false,
       editingTasks: false,
-      isEnabledSpeechApi: false,
+      page: 1,
+      isOn: false,
+      showExtraFeatures: false,
+      showFindPopup: false,
     };
   },
   created: function () {
-    const tasksData = localStorage.getItem("unsolvedTasks");
-    if (tasksData) {
-      this.unsolvedTasks = JSON.parse(tasksData);
+    const unsolvedTasksData = localStorage.getItem("unsolvedTasks");
+    if (unsolvedTasksData) {
+      this.unsolvedTasks = JSON.parse(unsolvedTasksData);
     }
-
-    this.isEnabledSpeechApi = "webkitSpeechRecognition" in window;
+    const solvedTasksData = localStorage.getItem("solvedTasks");
+    if (solvedTasksData) {
+      this.solvedTasks = JSON.parse(solvedTasksData);
+    }
   },
   mounted: function () {
     window.addEventListener("beforeunload", this.returnTasksToStandartPosition);
@@ -214,93 +196,32 @@ export default {
     },
   },
   methods: {
+    closeMenu() {
+      this.showExtraFeatures = false;
+    },
+    closeFindPopup() {
+      this.showFindPopup = false;
+    },
     returnTasksToStandartPosition() {
       this.unsolvedTasks.forEach((t) => {
         t.swipeLeft = 0;
         t.swipeLeftOffsetX = 0;
       });
-      localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
     },
-    dragHandler(event, task) {
-      const { movement: x, dragging, distance, direction } = event;
-
-      // обработка стрейфа влево
-      if (task.swipeRightOffsetX === 0) {
-        if (x[0] < 0 && x[0] > -50) {
-          task.swipeLeftOffsetX = x[0];
-        }
-
-        if (task.swipeLeft === -1) {
-          if (distance >= 5 && direction[0] === 1) {
-            task.swipeLeft = 0;
-          }
-        }
-
-        if (task.swipeLeftOffsetX < 0) {
-          if (distance > 40 && direction[0] === -1) {
-            task.swipeLeft = -1;
-          }
-        }
-        if (!dragging) {
-          if (task.swipeLeft === -1) {
-            task.swipeLeftOffsetX = -40;
-          } else if (task.swipeLeft === 0) {
-            task.swipeLeftOffsetX = 0;
-            return;
-          }
-        }
-      }
-      // обработка стрейфа вправо
-      if (task.swipeLeftOffsetX === 0) {
-        if (x[0] > 0) {
-          task.swipeRightOffsetX = x[0];
-          if (distance > 100) {
-            task.swipeRight = 1;
-          } else {
-            task.swipeRight = 0;
-          }
-        }
-        if (!dragging) {
-          if (x[0] <= 99) {
-            task.swipeRightOffsetX = 0;
-            task.swipeRight = 0;
-            return;
-          }
-        }
-      }
-      console.log(task.swipeLeftOffsetX);
-      return task.swipeLeft;
+    toggleSwitch() {
+      this.isOn = !this.isOn;
     },
-    getImgWidth(ref) {
-      // Проверьте, что элемент существует
-      this.$nextTick(() => {
-        if (ref) {
-          // Получите clientWidth элемента
-          const width = ref.clientWidth;
-          console.log("Ширина элемента:", width);
-        }
-      });
+    changeFilter(filter) {
+      this.filter = filter;
     },
-    addToVariable(value, swipeStatus) {
-      swipeStatus += value;
 
-      // Проверяем и ограничиваем значение переменной
-      if (swipeStatus > 1) {
-        swipeStatus = 1;
-      } else if (swipeStatus < -1) {
-        swipeStatus = -1;
-      }
-      return swipeStatus;
-    },
     startVoiceRecognition() {
-      // Начать распознавание речи
-
       const recognition = new window.webkitSpeechRecognition();
       recognition.lang = "ru-RU";
 
       recognition.onresult = (event) => {
         const taskName = event.results[0][0].transcript;
-        this.taskTitle = taskName;
+        this.recognizedString = taskName;
       };
       recognition.onspeechend = () => {
         recognition.stop();
@@ -308,32 +229,25 @@ export default {
 
       recognition.start();
     },
-    add() {
-      if (!this.taskTitle) {
-        return;
-      }
+    add(task) {
       const taskId = uuidv4();
       this.unsolvedTasks.push({
         id: taskId,
-        title: this.taskTitle,
-        checked: false,
+        title: task,
         editing: false,
-        editingText: this.taskTitle,
+        editingText: task,
         swipeLeftOffsetX: 0,
         showDeleteButton: false,
         swipeLeft: 0,
         swipeRightOffsetX: 0,
         swipeRight: 0,
       });
-      localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
-      this.taskTitle = "";
     },
     deleteTask(task) {
-      this.unsolvedTasks = this.unsolvedTasks.filter(
-        (t) => t.title !== task.title
-      );
-
-      localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
+      this.unsolvedTasks = this.unsolvedTasks.filter((t) => t.id !== task.id);
+    },
+    updateTasks(tasks) {
+      this.unsolvedTasks = tasks;
     },
     filterTasks(task, filter) {
       task = task.toLowerCase();
@@ -346,11 +260,11 @@ export default {
       }
       return true;
     },
-    updateTask(task) {
+    solveTask(task) {
       this.solvedTasks.push(task);
-      console.log("solvedTasks = ", this.solvedTasks);
+      // console.log("solvedTasks = ", this.solvedTasks);
+      localStorage.setItem("solvedTasks", JSON.stringify(this.solvedTasks));
       this.unsolvedTasks = this.unsolvedTasks.filter((t) => t !== task);
-      localStorage.setItem("unsolvedTasks", JSON.stringify(this.unsolvedTasks));
     },
     saveTask(task) {
       this.unsolvedTasks.forEach((t) => {
@@ -390,117 +304,256 @@ export default {
 };
 </script>
 <style scoped>
+.burger-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.burger-menu {
+  width: 30px;
+  height: 4px;
+  background-color: #333;
+  margin: 6px 0;
+  transition: transform 0.3s;
+}
+
+.burger-menu.active:nth-child(1) {
+  transform: translateY(10px) rotate(-45deg);
+}
+
+.burger-menu.active:nth-child(2) {
+  opacity: 0;
+}
+
+.burger-menu.active:nth-child(3) {
+  transform: translateY(-10px) rotate(45deg);
+}
+.menu {
+  background-color: #f9f9f9;
+  padding: 10px;
+  position: absolute;
+  top: 30px;
+  right: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+  min-width: 150px;
+}
+
+.menu-item {
+  padding: 8px 12px;
+}
+
+.menu-item__button {
+  display: block;
+  width: 100%;
+  background-color: transparent;
+  border: none;
+  text-align: center;
+  font-size: 36px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  color: #333;
+}
+
+.menu-item__button:hover {
+  background-color: #e6e6e6;
+}
+.find-popup {
+  position: absolute;
+  top: 80px;
+  right: 100px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  color: #333;
+  min-width: 300px;
+  padding: 10px;
+  pointer-events: auto;
+}
+
+.switch {
+  width: 80px;
+  height: 40px;
+  background-color: #ccc;
+  border-radius: 20px;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.switch.active {
+  background-color: #7fc33e;
+}
+/* .menu {
+  background-color: #f9f9f9;
+  padding: 10px;
+  position: absolute;
+  top: 40px;
+  right: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+} */
+.switch:before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.switch.active:before {
+  transform: translateX(40px);
+}
+
+.page {
+  /* width: 100vh; */
+
+  background: linear-gradient(
+    137deg,
+    #75f6ff,
+    #14fbff
+  ); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
 .todo-wrapper {
-  max-width: 1600px;
+  max-width: 800px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   margin: 0 auto;
   font-size: 36px;
+  background-color: rgb(31, 188, 211);
 }
-.filter-block {
+.todo-wrapper__header {
+  position: relative;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+}
+.first-string {
   display: flex;
+  justify-content: space-between;
+  padding: 10px 40px;
 }
-.filter-block__title {
-  font-size: 36px;
-  margin-right: 8px;
+.first-string__first-half {
+  display: flex;
+  gap: 30px;
+  align-content: center;
 }
-.filter-block__input-field {
-  font-size: 36px;
+
+.first-string__second-half {
+  display: flex;
+  gap: 30px;
+  align-content: center;
 }
-.filter-block__cancel-button {
-  font-size: 36px;
+.first-string__burger-icon {
+  width: 100%;
+  height: auto;
 }
-.edit-tasks-button {
+.test-chart {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  margin-top: 10px;
+}
+.first-string__chart-icon {
+}
+.first-string__additionally-icon {
+}
+.todo-wrapper__main-block {
+  background-color: #fff;
+  flex: 1 1 0;
+  overflow-y: auto;
+  padding: 0px 10px;
+}
+.empty-block {
+  height: 15px;
+  background-color: #fff;
+}
+.todo-wrapper__main-block::-webkit-scrollbar {
+  width: 8px; /* Ширина ползунка */
+}
+.todo-wrapper__main-block::-webkit-scrollbar-thumb {
+  background-color: rgb(31, 188, 211); /* Цвет ползунка */
+  border-radius: 4px; /* Скругление углов ползунка */
+}
+
+.todo-wrapper__main-block::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(25, 151, 170); /* Цвет ползунка при наведении */
+}
+
+.todo-wrapper__main-block::-webkit-scrollbar-track {
+  background-color: #dddcdc; /* Цвет фона ползунка */
+  border-radius: 4px; /* Скругление углов фона ползунка */
+}
+.todo-wrapper__task-list {
+  flex: 1 1 0;
+  overflow-y: auto;
+}
+.todo-wrapper__footer {
+}
+.first-string__title {
+  color: #fff;
+  display: flex;
+  font-size: 60px;
+  justify-content: center;
+}
+
+.navigation-block {
+  display: flex;
+  justify-content: space-between;
+  /* margin-top: 10px; */
+}
+/* .todo-wrapper__header::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: rgba(0, 0, 0, 1);
+} */
+.navigation-block__button {
+  color: #fff;
+  padding: 15px;
   font-size: 36px;
+  width: 50%;
+  background-color: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 10px;
+  transition: border-bottom 0.5s ease;
+}
+.navigation-block__unsolved-tasks {
+}
+.navigation-block__solved-tasks {
+}
+.navigation-block__active-button {
+  border-bottom-color: rgb(115, 255, 0);
+}
+.edit-tasks {
+  background-color: #fff;
+}
+.edit-tasks__button {
+  font-size: 36px;
+  background-color: transparent;
+  border: 0;
 }
 .task {
   width: 800px;
-}
-.task-block {
-  height: 40px;
-  display: flex;
-  margin-top: 8px;
-}
-.task__title {
-  align-self: center;
-  margin-right: 10px;
-}
-
-.task-block__image-conteiner {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-.task-block__icon {
-  width: 100%;
-  height: auto;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-.task__icon-edit {
-  z-index: 2;
-}
-.task__icon-delete {
-}
-
-.task__solve-img {
-  display: flex;
-  padding-right: 6px;
-  height: 40px;
-  width: 40px;
-  align-self: center;
-}
-.tasks-block {
-  overflow: hidden;
-  font-size: 36px;
-}
-
-.edit-block {
-  display: flex;
-}
-.edit-block__editing-field {
-  font-size: 36px;
-}
-.edit-block__save-button {
-  font-size: 36px;
-}
-.edit-block__cancel-button {
-  font-size: 36px;
 }
 
 .input-wrapper {
   display: flex;
   flex-direction: column;
 }
-
-.text-button {
-  position: relative;
-  font-size: 36px;
-  border: 0;
-  background-color: #fff;
-}
-
-.move-transition {
-  transition: transform 0.3s ease;
+.add-task-form {
+  justify-self: flex-end;
 }
 .position-transition {
   transition: width, height 0.3s ease;
-}
-.input-wrapper__input-container {
-  display: flex;
-  align-items: center;
-}
-
-.input-wrapper__input {
-  flex: 1;
-  font-size: 36px;
-}
-
-.input-wrapper__clear-button {
-  font-size: 36px;
-}
-
-.input-wrapper__add-button {
-  margin-top: 10px;
-  height: 30px;
 }
 </style>
