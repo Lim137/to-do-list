@@ -434,7 +434,6 @@ export default {
   background-color: #fff;
   flex: 1 1 0;
   overflow-y: auto;
-
   padding: 0px 10px;
 }
 .empty-block {
