@@ -12,13 +12,11 @@
             <h1 class="first-string__title">TODO</h1>
           </div>
           <div class="first-string__second-half">
-            <div class="test-chart">
-              <img
-                class="first-string__chart-icon"
-                src="./icon/chart.png"
-                alt=""
-              />
-            </div>
+            <button
+              @click="toggleSwitch"
+              :class="{ active: isGraphMode }"
+              class="switch"
+            ></button>
 
             <div
               class="burger-container"
@@ -43,7 +41,11 @@
                 <div class="menu-item">
                   <button
                     class="menu-item__button"
-                    @click="showFindPopup = true"
+                    @click="
+                      showFindPopup = true;
+                      page = 1;
+                      isGraphMode = false;
+                    "
                   >
                     Find
                   </button>
@@ -52,7 +54,7 @@
             </div>
           </div>
         </div>
-        <div class="navigation-block">
+        <div class="navigation-block" v-if="!isGraphMode">
           <button
             class="navigation-block__button navigation-block__unsolved-tasks"
             :class="page === 1 ? 'navigation-block__active-button' : ''"
@@ -80,8 +82,16 @@
           @closeFindPopup="closeFindPopup"
         />
       </div>
-      <div class="empty-block"></div>
-      <main class="todo-wrapper__main-block">
+      <!-- <div class="empty-block"></div> -->
+      <div v-if="isGraphMode" class="chart-block">
+        <chart-block
+          class="chart-block__chart"
+          :lengthUnsolvedTasks="unsolvedTasks.length"
+          :lengthSolvedTasks="solvedTasks.length"
+        />
+        <div class="chart-block__text">{{ percentageCompletedTasks }}%</div>
+      </div>
+      <main class="todo-wrapper__main-block" v-if="!isGraphMode">
         <div v-if="page === 1">
           <div v-if="editingTasks">
             <button class="edit-tasks-button" @click="editingTasks = false">
@@ -90,7 +100,7 @@
           </div>
           <div v-if="!editingTasks">
             <div class="todo-wrapper__task-list" ref="taskBlock">
-              <task-list
+              <unsolved-task-list
                 :taskBlockWidth="taskBlockWidth"
                 :filteredTasks="filteredTasks"
                 @solveTask="solveTask"
@@ -113,9 +123,12 @@
             />
           </div>
         </div>
+        <div v-if="page === 2 && !isGraphMode">
+          <solved-task-list :tasks="solvedTasks" />
+        </div>
       </main>
-      <div class="empty-block"></div>
-      <footer class="todo-wrapper__footer" v-if="page === 1">
+      <!-- <div class="empty-block"></div> -->
+      <footer class="todo-wrapper__footer" v-if="page === 1 && !isGraphMode">
         <add-task-form
           class="add-task-form"
           :recognizedString="recognizedString"
@@ -123,11 +136,6 @@
           @voiceRecognition="startVoiceRecognition"
         ></add-task-form>
       </footer>
-      <div v-if="page === 2">
-        <div v-for="task in solvedTasks" :key="task.id">
-          {{ task.title }}
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -137,8 +145,10 @@ import { v4 as uuidv4 } from "uuid";
 
 import AddTaskForm from "./components/AddTaskForm.vue";
 import FilterPanel from "./components/FilterPanel.vue";
-import TaskList from "./components/TaskList.vue";
+import UnsolvedTaskList from "./components/UnsolvedTaskList.vue";
 import DraggableTaskList from "./components/DraggableTaskList.vue";
+import ChartBlock from "./components/ChartBlock.vue";
+import SolvedTaskList from "./components/SolvedTaskList.vue";
 
 export default {
   name: "App",
@@ -146,8 +156,10 @@ export default {
   components: {
     AddTaskForm,
     FilterPanel,
-    TaskList,
+    UnsolvedTaskList,
     DraggableTaskList,
+    ChartBlock,
+    SolvedTaskList,
   },
   data() {
     return {
@@ -161,6 +173,8 @@ export default {
       showExtraFeatures: false,
       showFindPopup: false,
       taskBlockWidth: 0,
+      chartData: [],
+      isGraphMode: false,
     };
   },
   created: function () {
@@ -192,7 +206,19 @@ export default {
     isEmptyTaskList() {
       return this.filteredTasks.length === 0 && this.filter === "";
     },
+    percentageCompletedTasks() {
+      if (this.unsolvedTasks.length + this.solvedTasks.length !== 0) {
+        return (
+          (this.solvedTasks.length /
+            (this.unsolvedTasks.length + this.solvedTasks.length)) *
+          100
+        ).toFixed(2);
+      } else {
+        return 0;
+      }
+    },
   },
+
   methods: {
     closeMenu() {
       this.showExtraFeatures = false;
@@ -206,7 +232,9 @@ export default {
         t.swipeLeftOffsetX = 0;
       });
     },
-
+    toggleSwitch() {
+      this.isGraphMode = !this.isGraphMode;
+    },
     changeFilter(filter) {
       this.filter = filter;
     },
@@ -259,7 +287,7 @@ export default {
     solveTask(task) {
       this.solvedTasks.push(task);
       // console.log("solvedTasks = ", this.solvedTasks);
-      localStorage.setItem("solvedTasks", JSON.stringify(this.solvedTasks));
+
       this.unsolvedTasks = this.unsolvedTasks.filter((t) => t !== task);
     },
     saveTask(task) {
@@ -368,6 +396,18 @@ export default {
   pointer-events: auto;
 }
 
+.switch {
+  width: 80px;
+  height: 40px;
+  background-color: #ccc;
+  border-radius: 20px;
+  position: relative;
+  transition: background-color 0.3s ease;
+}
+
+.switch.active {
+  background-color: #7fc33e;
+}
 /* .menu {
   background-color: #f9f9f9;
   padding: 10px;
@@ -376,6 +416,22 @@ export default {
   right: 0;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 } */
+.switch:before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.switch.active:before {
+  transform: translateX(40px);
+}
 
 .page {
   /* width: 100vh; */
@@ -412,7 +468,7 @@ export default {
 .first-string__second-half {
   display: flex;
   gap: 30px;
-  align-content: center;
+  align-items: center;
 }
 .first-string__burger-icon {
   width: 100%;
@@ -461,6 +517,8 @@ export default {
   overflow-y: auto;
 }
 .todo-wrapper__footer {
+  box-shadow: rgba(14, 30, 37, 0.12) 0px -2px 4px 0px,
+    rgba(14, 30, 37, 0.32) 0px -2px 16px 0px;
 }
 .first-string__title {
   color: #fff;
@@ -523,4 +581,23 @@ export default {
 .position-transition {
   transition: width, height 0.3s ease;
 }
+.chart-block {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  align-items: center;
+}
+.chart-block__chart {
+  padding-top: 80px;
+  margin-bottom: 10px;
+}
+.chart-block__text {
+  font-size: 40px;
+  color: #fff;
+}
+/* Кастомизировать графу done. 
+   Кастомизировать графу Edit. 
+   Добавить картинку в background для кнопки показать график. 
+   Сделать чтобы поиск убирался при переходя в какое либо другое поле. 
+   Сделать менюшку бургера(там будут все списки задач и управление аккаунтом пользоваьеля)*/
 </style>

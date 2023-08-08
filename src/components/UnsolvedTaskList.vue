@@ -31,6 +31,10 @@
                   class="task__solve-img"
                   alt=""
                   ref="solveIcon"
+                  :style="{
+                    width:
+                      task.swipeRightOffsetX < 41 ? task.swipeRight : '40px',
+                  }"
                 />
               </div>
             </div>
@@ -317,8 +321,4 @@ export default {
   align-content: center;
   justify-content: center;
 }
-/* 1. Сделать анимацию для редактирования и удаления. +
-2. Починить анимацию исчезновения задачи после решения (сейчас она исчезает за экраном и в момент исчезновения ее видно). +
-3. Починить отображение большого текста. Сейчас надо протестить все что связано с анимацией влево
-4. Поменять картинку solve.png на check.png */
 </style>
