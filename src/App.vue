@@ -33,7 +33,10 @@
                 <div class="menu-item">
                   <button
                     class="menu-item__button"
-                    @click="editingTasks = true"
+                    @click="
+                      editingTasks = true;
+                      page = 1;
+                    "
                   >
                     Edit
                   </button>
@@ -96,7 +99,7 @@
           </div>
           <div v-if="!editingTasks">
             <div class="todo-wrapper__task-list" ref="taskBlock">
-              <task-list
+              <unsolved-task-list
                 :taskBlockWidth="taskBlockWidth"
                 :filteredTasks="filteredTasks"
                 @solveTask="solveTask"
@@ -120,6 +123,9 @@
             />
           </div>
         </div>
+        <div v-if="page === 2 && !isGraphMode">
+          <solved-task-list :tasks="solvedTasks" />
+        </div>
       </main>
       <!-- <div class="empty-block"></div> -->
       <footer class="todo-wrapper__footer" v-if="page === 1 && !isGraphMode">
@@ -130,11 +136,6 @@
           @voiceRecognition="startVoiceRecognition"
         ></add-task-form>
       </footer>
-      <div v-if="page === 2 && !isGraphMode">
-        <div v-for="task in solvedTasks" :key="task.id">
-          {{ task.title }}
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -144,9 +145,10 @@ import { v4 as uuidv4 } from "uuid";
 
 import AddTaskForm from "./components/AddTaskForm.vue";
 import FilterPanel from "./components/FilterPanel.vue";
-import TaskList from "./components/UnsolvedTaskList.vue";
+import UnsolvedTaskList from "./components/UnsolvedTaskList.vue";
 import DraggableTaskList from "./components/DraggableTaskList.vue";
 import ChartBlock from "./components/ChartBlock.vue";
+import SolvedTaskList from "./components/SolvedTaskList.vue";
 
 export default {
   name: "App",
@@ -154,9 +156,10 @@ export default {
   components: {
     AddTaskForm,
     FilterPanel,
-    TaskList,
+    UnsolvedTaskList,
     DraggableTaskList,
     ChartBlock,
+    SolvedTaskList,
   },
   data() {
     return {
