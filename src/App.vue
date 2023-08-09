@@ -41,11 +41,7 @@
                 <div class="menu-item">
                   <button
                     class="menu-item__button"
-                    @click="
-                      showFindPopup = true;
-                      page = 1;
-                      isGraphMode = false;
-                    "
+                    @click="showFindPopup = true"
                   >
                     Find
                   </button>
@@ -100,7 +96,7 @@
           </div>
           <div v-if="!editingTasks">
             <div class="todo-wrapper__task-list" ref="taskBlock">
-              <unsolved-task-list
+              <task-list
                 :taskBlockWidth="taskBlockWidth"
                 :filteredTasks="filteredTasks"
                 @solveTask="solveTask"
@@ -114,17 +110,15 @@
           <div v-else>
             <draggable-task-list
               :tasks="unsolvedTasks"
+              :taskBlockWidth="taskBlockWidth"
               @updateUnsolvedTasks="updateTasks"
-              @solveTask="solveTask"
-              @deleteTask="deleteTask"
+              @solveTasks="massSolve"
+              @deleteTasks="massDelete"
               @editTask="editTask"
               @saveTask="saveTask"
               @cancelEdit="cancelEdit"
             />
           </div>
-        </div>
-        <div v-if="page === 2 && !isGraphMode">
-          <solved-task-list :tasks="solvedTasks" />
         </div>
       </main>
       <!-- <div class="empty-block"></div> -->
@@ -136,6 +130,11 @@
           @voiceRecognition="startVoiceRecognition"
         ></add-task-form>
       </footer>
+      <div v-if="page === 2 && !isGraphMode">
+        <div v-for="task in solvedTasks" :key="task.id">
+          {{ task.title }}
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -145,10 +144,9 @@ import { v4 as uuidv4 } from "uuid";
 
 import AddTaskForm from "./components/AddTaskForm.vue";
 import FilterPanel from "./components/FilterPanel.vue";
-import UnsolvedTaskList from "./components/UnsolvedTaskList.vue";
+import TaskList from "./components/UnsolvedTaskList.vue";
 import DraggableTaskList from "./components/DraggableTaskList.vue";
 import ChartBlock from "./components/ChartBlock.vue";
-import SolvedTaskList from "./components/SolvedTaskList.vue";
 
 export default {
   name: "App",
@@ -156,10 +154,9 @@ export default {
   components: {
     AddTaskForm,
     FilterPanel,
-    UnsolvedTaskList,
+    TaskList,
     DraggableTaskList,
     ChartBlock,
-    SolvedTaskList,
   },
   data() {
     return {
@@ -220,11 +217,26 @@ export default {
   },
 
   methods: {
+    massDelete(tasks) {
+      console.log(tasks);
+      const tasksToDelTitles = tasks.map((t) => t.title);
+      console.log(tasksToDelTitles);
+      this.unsolvedTasks = this.unsolvedTasks.filter(
+        (t) => !tasksToDelTitles.includes(t.title)
+      );
+    },
+    massSolve(tasks) {
+      console.log(tasks);
+      this.solvedTasks = [...this.solvedTasks, ...tasks];
+      localStorage.setItem("solvedTasks", JSON.stringify(this.solvedTasks));
+      this.massDelete(tasks);
+    },
     closeMenu() {
       this.showExtraFeatures = false;
     },
-    closeFindPopup() {
+    closeFindPopup(filter) {
       this.showFindPopup = false;
+      this.filter = filter;
     },
     returnTasksToStandartPosition() {
       this.unsolvedTasks.forEach((t) => {
@@ -265,6 +277,7 @@ export default {
         swipeLeft: 0,
         swipeRightOffsetX: 0,
         swipeRight: 0,
+        checked: false,
       });
     },
     deleteTask(task) {
@@ -287,7 +300,7 @@ export default {
     solveTask(task) {
       this.solvedTasks.push(task);
       // console.log("solvedTasks = ", this.solvedTasks);
-
+      localStorage.setItem("solvedTasks", JSON.stringify(this.solvedTasks));
       this.unsolvedTasks = this.unsolvedTasks.filter((t) => t !== task);
     },
     saveTask(task) {
@@ -527,6 +540,25 @@ export default {
   justify-content: center;
 }
 
+.edit-tasks-button {
+  display: inline-block;
+  padding: 7px 14px;
+  font-size: 16px;
+  background-color: rgb(31, 188, 211);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.edit-tasks-button:hover {
+  background-color: rgb(14, 144, 163);
+}
+
+/* Эффект при активации */
+.edit-tasks-button:active {
+  background-color: rgb(7, 90, 102);
+}
 .navigation-block {
   display: flex;
   justify-content: space-between;
@@ -595,9 +627,5 @@ export default {
   font-size: 40px;
   color: #fff;
 }
-/* Кастомизировать графу done. 
-   Кастомизировать графу Edit. 
-   Добавить картинку в background для кнопки показать график. 
-   Сделать чтобы поиск убирался при переходя в какое либо другое поле. 
-   Сделать менюшку бургера(там будут все списки задач и управление аккаунтом пользоваьеля)*/
+/* Кастомизировать графу done. Кастомизировать графу Edit. Добавить картинку в background для кнопки показать график. Сделать чтобы поиск убирался при переходя в какое либо другое поле. Сделать менюшку бургера(там будут все списки задач и управление аккаунтом пользоваьеля)*/
 </style>

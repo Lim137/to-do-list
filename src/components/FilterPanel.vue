@@ -9,7 +9,7 @@
     <div class="vertical-line"></div>
     <button
       class="filter-block__cancel-button"
-      @click="this.$emit('closeFindPopup')"
+      @click="$emit('closeFindPopup', '')"
     >
       ✕
     </button>
