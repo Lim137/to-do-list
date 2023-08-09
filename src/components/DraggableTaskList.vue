@@ -8,27 +8,18 @@
     <template #item="{ element }">
       <div>
         <div v-if="!element.editing">
-          <div>
-            <label>
+          <div class="task">
+            <label class="task__text">
               <input
                 type="checkbox"
                 name="task"
                 :id="element.id"
                 v-model="element.checked"
-                @change="$emit('solveTask', element)"
               />
               <span @click="$emit('editTask', element)">{{
                 element.title
               }}</span>
             </label>
-
-            <button @click="$emit('editTask', element)">edit</button>
-            <button
-              class="task__delete-button"
-              @click="$emit('deleteTask', element)"
-            >
-              delete
-            </button>
           </div>
         </div>
         <div v-if="element.editing" class="edit-block">
@@ -56,6 +47,15 @@
       </div>
     </template>
   </draggable-block>
+  <button @click="$emit('solveTasks', checkedTasks)" class="edit-button">
+    solve
+  </button>
+  <button
+    class="task__delete-button"
+    @click="$emit('deleteTasks', checkedTasks)"
+  >
+    delete
+  </button>
 </template>
 
 <script>
@@ -76,9 +76,18 @@ export default {
       unsolvedTasks: [],
     };
   },
+  computed: {
+    checkedTasks() {
+      return this.unsolvedTasks.filter((t) => t.checked === true);
+    },
+  },
   props: {
     tasks: {
       type: Object,
+      required: true,
+    },
+    taskBlockWidth: {
+      type: Number,
       required: true,
     },
   },
@@ -87,8 +96,8 @@ export default {
   },
   emits: {
     updateUnsolvedTasks: (tasks) => typeof tasks === "object",
-    solveTask: (task) => typeof task === "object",
-    deleteTask: (task) => typeof task === "object",
+    solveTasks: (task) => typeof task === "object",
+    deleteTasks: (task) => typeof task === "object",
     editTask: (task) => typeof task === "object",
     cancelEdit: (task) => typeof task === "object",
     saveTask: (task) => typeof task === "object",
@@ -107,3 +116,38 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.task {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+button {
+  padding: 7px 14px;
+  font-size: 16px;
+  background-color: rgb(31, 188, 211);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: rgb(14, 144, 163);
+}
+
+button:active {
+  background-color: rgb(7, 90, 102);
+}
+
+.task__text {
+  display: flex;
+  flex: 1 1 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
