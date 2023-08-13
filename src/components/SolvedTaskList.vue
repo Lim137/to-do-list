@@ -12,6 +12,10 @@ export default {
       type: Object,
       required: true,
     },
+    taskListName: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
@@ -30,7 +34,10 @@ export default {
           this.solvedTasks.length - this.$options.maxTasksInList
         );
       }
-      localStorage.setItem("solvedTasks", JSON.stringify(this.solvedTasks));
+      localStorage.setItem(
+        `${this.taskListName} solved`,
+        JSON.stringify(this.solvedTasks)
+      );
     },
   },
 };
