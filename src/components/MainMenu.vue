@@ -13,13 +13,13 @@
             class="list-catalog__list-name text"
             @click="selectedList = taskList"
           >
-            {{ taskList }}
+            {{ taskList.listName }}
           </div>
 
           <img
             class="list-catalog__delete-button"
             src="../icon/delete.png"
-            @click="deleteTaskList(taskList, index)"
+            @click="deleteTaskList(taskList.id, index)"
           />
         </div>
       </div>
@@ -56,6 +56,7 @@
 </template>
 <script>
 import focusDirective from "../directives/focus.js";
+import { v4 as uuidv4 } from "uuid";
 export default {
   directives: {
     focus: focusDirective,
@@ -66,11 +67,11 @@ export default {
       addingTask: false,
       taskListName: "",
       taskBlockWidth: 0,
-      selectedList: "",
+      selectedList: [],
     };
   },
   emits: {
-    selectedList: (list) => typeof list === "string" || list === undefined,
+    selectedList: (list) => typeof list === "object",
   },
   props: {},
   created() {
@@ -78,6 +79,8 @@ export default {
     if (taskListCatalogData) {
       this.taskListCatalog = JSON.parse(taskListCatalogData);
       this.selectedList = this.taskListCatalog[0];
+    } else {
+      this.selectedList = undefined;
     }
   },
   mounted() {
@@ -90,30 +93,30 @@ export default {
     },
     saveTaskList() {
       if (this.taskListName) {
-        this.taskListCatalog.push(this.taskListName);
-        this.selectedList = this.taskListName;
+        const listId = uuidv4();
+
+        this.taskListCatalog.push({ listName: this.taskListName, id: listId });
+        this.selectedList =
+          this.taskListCatalog[this.taskListCatalog.length - 1];
       }
 
       this.taskListName = "";
       this.addingTask = false;
     },
-    deleteTaskList(taskList, index) {
+    deleteTaskList(taskListId, index) {
       this.taskListCatalog = this.taskListCatalog.filter(
-        (list) => list !== taskList
+        (list) => list.id !== taskListId
       );
-      this.deleteFromLocalStorage(taskList);
+      this.deleteFromLocalStorage(taskListId);
       if (this.taskListCatalog[index]) {
         this.selectedList = this.taskListCatalog[index];
-      } else if (this.taskListCatalog[0]) {
+      } else {
         this.selectedList = this.taskListCatalog[0];
       }
-      if (this.taskListCatalog.length === 0) {
-        this.selectedList = "Not selected";
-      }
     },
-    deleteFromLocalStorage(taskList) {
-      localStorage.removeItem(`${taskList} solved`);
-      localStorage.removeItem(`${taskList} unsolved`);
+    deleteFromLocalStorage(taskListId) {
+      localStorage.removeItem(`${taskListId} solved`);
+      localStorage.removeItem(`${taskListId} unsolved`);
     },
   },
   watch: {
@@ -128,8 +131,9 @@ export default {
     },
     selectedList() {
       if (this.selectedList === undefined) {
-        this.selectedList = "Not selected";
+        this.selectedList = { listName: "Not selected", id: -1 };
       }
+
       this.$emit("selectedList", this.selectedList);
     },
   },
@@ -210,8 +214,4 @@ export default {
 .add-new-list-field__save-button {
   height: 40px;
 }
-/* 1. Сделать чтобы при отображении графика и перелистывании списка график тоже менялся (если не получится можно сделать чтобы при перелистывании график скрывался)
-   2. Кастомизация блоков текста во всем приложении
-   3. Сделать возможность менять название листов задач
-   4. Авторизация и регистрация*/
 </style>

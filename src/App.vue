@@ -14,7 +14,11 @@
                 alt=""
                 @click="showMainMenu = !showMainMenu"
               />
-              <h1 class="first-string__title">{{ selectedList }}</h1>
+              <input
+                class="first-string__title"
+                v-model="selectedList.listName"
+                :disabled="selectedList.id === -1"
+              />
             </div>
             <div class="first-string__second-half">
               <button
@@ -105,7 +109,7 @@
             <div v-if="!editingTasks">
               <div class="todo-wrapper__task-list" ref="taskBlock">
                 <unsolved-task-list
-                  :taskBlockWidth="taskBlockWidth"
+                  :taskBlockWidth="taskBlockWidth - 20"
                   :filteredTasks="filteredTasks"
                   @solveTask="solveTask"
                   @deleteTask="deleteTask"
@@ -118,7 +122,7 @@
             <div v-else>
               <draggable-task-list
                 :tasks="unsolvedTasks"
-                :taskBlockWidth="taskBlockWidth"
+                :taskBlockWidth="taskBlockWidth - 20"
                 @updateUnsolvedTasks="updateTasks"
                 @solveTasks="massSolve"
                 @deleteTasks="massDelete"
@@ -131,12 +135,15 @@
           <div v-if="page === 2 && !isGraphMode">
             <solved-task-list
               :tasks="solvedTasks"
-              :taskListName="selectedList"
+              :taskListId="selectedList.id"
             />
           </div>
         </main>
         <!-- <div class="empty-block"></div> -->
-        <footer class="todo-wrapper__footer" v-if="page === 1 && !isGraphMode">
+        <footer
+          class="todo-wrapper__footer"
+          v-if="page === 1 && !isGraphMode && selectedList.id !== -1"
+        >
           <add-task-form
             class="add-task-form"
             :recognizedString="recognizedString"
@@ -186,7 +193,9 @@ export default {
       taskBlockWidth: 0,
       isGraphMode: false,
       showMainMenu: true,
-      selectedList: "",
+      selectedList: [],
+      editingTitle: false,
+      listName: "",
     };
   },
   created: function () {},
@@ -231,7 +240,7 @@ export default {
     },
     readDataFromLocalStorage() {
       const unsolvedTasksData = localStorage.getItem(
-        `${this.selectedList} unsolved`
+        `${this.selectedList.id} unsolved`
       );
       if (unsolvedTasksData) {
         this.unsolvedTasks = JSON.parse(unsolvedTasksData);
@@ -239,7 +248,7 @@ export default {
         this.unsolvedTasks = [];
       }
       const solvedTasksData = localStorage.getItem(
-        `${this.selectedList} solved`
+        `${this.selectedList.id} solved`
       );
       if (solvedTasksData) {
         this.solvedTasks = JSON.parse(solvedTasksData);
@@ -248,9 +257,7 @@ export default {
       }
     },
     massDelete(tasks) {
-      console.log(tasks);
       const tasksToDelTitles = tasks.map((t) => t.title);
-      console.log(tasksToDelTitles);
       this.unsolvedTasks = this.unsolvedTasks.filter(
         (t) => !tasksToDelTitles.includes(t.title)
       );
@@ -259,12 +266,15 @@ export default {
       }
     },
     massSolve(tasks) {
-      console.log(tasks);
       this.solvedTasks = [...this.solvedTasks, ...tasks];
+      if (this.selectedList.id === -1) {
+        return;
+      }
       localStorage.setItem(
-        `${this.selectedList} solved`,
+        `${this.selectedList.id} solved`,
         JSON.stringify(this.solvedTasks)
       );
+
       this.massDelete(tasks);
     },
     closeMenu() {
@@ -336,8 +346,11 @@ export default {
     solveTask(task) {
       this.solvedTasks.push(task);
       // console.log("solvedTasks = ", this.solvedTasks);
+      if (this.selectedList.id === -1) {
+        return;
+      }
       localStorage.setItem(
-        `${this.selectedList} solved`,
+        `${this.selectedList.id} solved`,
         JSON.stringify(this.solvedTasks)
       );
       this.unsolvedTasks = this.unsolvedTasks.filter((t) => t !== task);
@@ -369,15 +382,15 @@ export default {
   watch: {
     unsolvedTasks: {
       handler() {
+        if (this.selectedList.id === -1) {
+          return;
+        }
         localStorage.setItem(
-          `${this.selectedList} unsolved`,
+          `${this.selectedList.id} unsolved`,
           JSON.stringify(this.unsolvedTasks)
         );
       },
       deep: true,
-    },
-    selectedList() {
-      console.log(this.selectedList);
     },
   },
 };
@@ -414,7 +427,7 @@ export default {
   top: 30px;
   right: 0;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  border-radius: 5px;
+  border-radius: 10px;
   min-width: 150px;
 }
 
@@ -443,7 +456,7 @@ export default {
   right: 100px;
   background-color: #fff;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   color: #333;
   min-width: 300px;
@@ -525,12 +538,14 @@ export default {
 }
 .first-string__first-half {
   display: flex;
+  /* width: 50%; */
   gap: 30px;
   align-items: center;
 }
 
 .first-string__second-half {
   display: flex;
+  /* width: 50%; */
   gap: 30px;
   align-items: center;
 }
@@ -586,7 +601,9 @@ export default {
 }
 .first-string__title {
   color: #fff;
+  width: 100%;
   display: flex;
+  background-color: rgb(31, 188, 211);
   flex: 1 1 0;
   font-size: 60px;
   justify-content: center;
@@ -599,7 +616,7 @@ export default {
   background-color: rgb(31, 188, 211);
   color: #fff;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }

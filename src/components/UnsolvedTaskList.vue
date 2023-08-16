@@ -11,6 +11,7 @@
           v-if="!task.editing"
           v-drag="(event) => dragHandler(event, task)"
           :class="task.swipeRightOffsetX === 0 ? 'move-transition' : ''"
+          class="string-block"
         >
           <div class="task-block">
             <div v-if="task.swipeLeftOffsetX === 0">
@@ -50,12 +51,12 @@
                 opacity: task.swipeRightOffsetX > 50 ? '0.5' : '1',
               }"
             >
-              <button class="text-button" ref="textButton">
+              <button class="text-button">
                 <div
                   class="text-button"
                   :style="{
                     width: `${
-                      taskBlockWidth - Math.abs(task.swipeLeftOffsetX)
+                      taskBlockWidth - Math.abs(task.swipeLeftOffsetX) - 10
                     }px`,
                   }"
                   ref="textButton"
@@ -67,57 +68,51 @@
 
             <div
               class="task-block__image-conteiner"
-              :style="{ width: task.swipeLeft }"
+              :style="{
+                width: task.swipeLeft,
+              }"
             >
               <div class="task-block__icon task-block__icon_bg-yellow">
                 <img
                   src="../icon/editing.png"
                   @click="$emit('editTask', task)"
+                  :style="{
+                    width:
+                      task.swipeLeftOffsetX > -41 ? task.swipeLeft : '40px',
+                  }"
                 />
               </div>
               <div class="task-block__icon task-block__icon_bg-red">
                 <img
-                  v-if="task.swipeRightOffsetX === 0"
                   src="../icon/delete.png"
                   @click="$emit('deleteTask', task)"
+                  :style="{
+                    width:
+                      task.swipeLeftOffsetX > -41 ? task.swipeLeft : '40px',
+                  }"
                 />
               </div>
             </div>
           </div>
         </div>
-        <div v-if="task.editing" class="edit-block">
-          <input
-            class="edit-block__editing-field"
-            type="text"
-            v-model="task.editingText"
-            v-focus
-            @keydown.esc="$emit('cancelEdit', task)"
-            @keydown.enter="$emit('saveTask', task)"
-          />
-          <button
-            class="edit-block__save-button"
-            @click="$emit('saveTask', task)"
-          >
-            Save
-          </button>
-          <button
-            class="edit-block__cancel-button"
-            @click="$emit('cancelEdit', task)"
-          >
-            Cancel
-          </button>
-        </div>
+        <text-edit-block
+          v-if="task.editing"
+          :taskFromApp="task"
+          @cancelEdit="$emit('cancelEdit', task)"
+          @saveTask="$emit('saveTask', task)"
+        />
       </div>
     </transition-group>
   </div>
 </template>
 
 <script>
-import focusDirective from "../directives/focus.js";
+import TextEditBlock from "./TextEditBlock.vue";
 export default {
   // :class="task.swipeRight === 1 ? 'task__solve-img-show' : ''"
-  directives: {
-    focus: focusDirective,
+
+  components: {
+    TextEditBlock,
   },
   props: {
     filteredTasks: {
@@ -149,7 +144,6 @@ export default {
         //
         if (x[0] < 0) {
           task.swipeLeft = `${Math.abs(x[0])}px`;
-          console.log(task.swipeLeft);
           task.swipeLeftOffsetX = x[0];
         }
 
@@ -159,8 +153,8 @@ export default {
             task.swipeLeft = `0px`;
             return;
           } else {
-            task.swipeLeft = `64px`;
-            task.swipeLeftOffsetX = -65;
+            task.swipeLeft = `103.2px`;
+            task.swipeLeftOffsetX = -103.2;
           }
         }
         //
@@ -231,6 +225,9 @@ export default {
 };
 </script>
 <style scoped>
+.string-block {
+  display: flex;
+}
 .task-list-move,
 .task-list-leave-active,
 .task-list-enter-active {
@@ -248,6 +245,7 @@ export default {
 .tasks-block {
   background-color: #fff;
   overflow: hidden;
+  padding: 10px;
   font-size: 36px;
 }
 .move-transition {
@@ -256,7 +254,9 @@ export default {
 
 .task-block {
   position: relative;
-  height: 40px;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  border-radius: 10px;
+
   display: flex;
   margin: 10px 0px;
 }
@@ -271,6 +271,7 @@ export default {
 .text-button-block {
   display: flex;
   flex: 1 1 0;
+  padding: 5px;
   /* width: calc(100% - 400px); */
 }
 .text-button {
@@ -285,38 +286,41 @@ export default {
 }
 .task-block__image-conteiner {
   position: relative;
-  height: 32px;
   display: flex;
+  align-self: center;
+  justify-self: center;
+  height: 100%;
 }
 .task-block__icon {
   width: 50%;
-  align-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 2;
+
+  /* height: 100%; */
 }
 .task-block__icon_bg-yellow {
-  position: absolute;
+  /* position: absolute;
   left: 0;
-  bottom: 0;
-  height: 32px;
-  background: yellow;
+  bottom: 0; */
+  background-color: yellow;
 }
 .task-block__icon_bg-red {
-  background: red;
-  position: absolute;
+  background-color: red;
+  /* position: absolute;
   right: 0;
-  height: 32px;
-  bottom: 0;
+  bottom: 0; */
+  border-radius: 0px 10px 10px 0px;
 }
-.edit-block {
-  display: flex;
-  font-size: 36px;
-}
+
 .task__solve-block {
   position: absolute;
   z-index: 2;
   left: 0;
   bottom: 0;
   background-color: #009045;
+  height: 100%;
   display: flex;
   align-content: center;
   justify-content: center;
