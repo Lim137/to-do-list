@@ -5,6 +5,7 @@
       group="task-list"
       :options="dragOptions"
       item-key="id"
+      @end="$emit('taskMoved')"
     >
       <template #item="{ element }">
         <div>
@@ -90,8 +91,8 @@ export default {
     editTask: (task) => typeof task === "object",
     cancelEdit: (task) => typeof task === "object",
     saveTask: (task) => typeof task === "object",
+    taskMoved: null,
   },
-
   watch: {
     unsolvedTasks: {
       handler() {

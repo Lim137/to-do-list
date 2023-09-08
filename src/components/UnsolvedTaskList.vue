@@ -109,8 +109,6 @@
 <script>
 import TextEditBlock from "./TextEditBlock.vue";
 export default {
-  // :class="task.swipeRight === 1 ? 'task__solve-img-show' : ''"
-
   components: {
     TextEditBlock,
   },
@@ -137,11 +135,6 @@ export default {
       const { movement: x, dragging } = event;
       // обработка стрейфа влево
       if (task.swipeRightOffsetX === 0) {
-        // if (x[0] < task.swipeLeftOffsetX && x[0] > -50 && direction[0] === -1) {
-        //   task.swipeLeftOffsetX = x[0];
-        // }
-
-        //
         if (x[0] < 0) {
           task.swipeLeft = `${Math.abs(x[0])}px`;
           task.swipeLeftOffsetX = x[0];
@@ -157,53 +150,12 @@ export default {
             task.swipeLeftOffsetX = -103.2;
           }
         }
-        //
-
-        // if (direction[0] === -1 && task.swipeLeftOffsetX - 1 > -50) {
-        //   task.swipeLeftOffsetX = task.swipeLeftOffsetX - 1;
-        // }
-        // if (task.swipeLeft === -1) {
-        //   if (distance >= 5 && direction[0] === 1) {
-        //     task.swipeLeft = 0;
-        //   }
-        // }
-        // if (
-        //   direction[0] === 1 &&
-        //   task.swipeLeftOffsetX + 1 < 0 &&
-        //   task.swipeLeftOffsetX !== 0
-        // ) {
-        //   task.swipeLeftOffsetX = task.swipeLeftOffsetX + 1;
-        // }
-        // if (task.swipeLeftOffsetX < 0) {
-        //   if (distance > 40 && direction[0] === -1) {
-        //     task.swipeLeft = -1;
-        //   }
-        // }
-
-        // if (!dragging) {
-        //   if (task.swipeLeft === -1) {
-        //     task.swipeLeftOffsetX = -40;
-        //   } else if (task.swipeLeft === 0) {
-        //     task.swipeLeftOffsetX = 0;
-        //     return;
-        //   }
-        // }
       }
       // обработка стрейфа вправо
       if (task.swipeLeftOffsetX === 0) {
         if (x[0] > 0 && x[0] < this.taskBlockWidth - 100) {
           task.swipeRight = `${Math.abs(x[0])}px`;
           task.swipeRightOffsetX = x[0];
-          // console.log("solveBlock = ", this.$refs.solveBlock[0].clientWidth);
-          // console.log("solveIcon = ", this.$refs.solveIcon[0].clientWidth);
-          // console.log(distance);
-          // console.log(task.swipeRightOffsetX);
-          // if (distance > 41) {
-          //   task.swipeRight = 1;
-          //   task.swipeRightOffsetX -= 40;
-          // } else {
-          //   task.swipeRight = 0;
-          // }
         }
         if (!dragging) {
           if (x[0] <= 50) {
@@ -218,7 +170,6 @@ export default {
           }
         }
       }
-      // console.log(task.swipeRightOffsetX);
       return task.swipeLeft;
     },
   },
@@ -272,7 +223,6 @@ export default {
   display: flex;
   flex: 1 1 0;
   padding: 5px;
-  /* width: calc(100% - 400px); */
 }
 .text-button {
   font-size: 36px;
@@ -297,20 +247,12 @@ export default {
   justify-content: center;
   align-items: center;
   z-index: 2;
-
-  /* height: 100%; */
 }
 .task-block__icon_bg-yellow {
-  /* position: absolute;
-  left: 0;
-  bottom: 0; */
   background-color: yellow;
 }
 .task-block__icon_bg-red {
   background-color: red;
-  /* position: absolute;
-  right: 0;
-  bottom: 0; */
   border-radius: 0px 10px 10px 0px;
 }
 

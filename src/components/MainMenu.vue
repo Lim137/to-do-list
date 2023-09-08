@@ -1,29 +1,43 @@
 <template>
-  <div class="menu-block" ref="taskListName">
-    <div class="text menu-block__title">Account_info@gmail.com</div>
-    <transition-group
-      name="list-catalog"
-      tag="div"
-      appear
-      transition="opacity 0.5s"
-    >
-      <div v-for="(taskList, index) in taskListCatalog" :key="index">
-        <div class="list-catalog" :style="{ width: `${taskBlockWidth}px` }">
-          <div
-            class="list-catalog__list-name text"
-            @click="selectedList = taskList"
-          >
-            {{ taskList.listName }}
-          </div>
-
-          <img
-            class="list-catalog__delete-button"
-            src="../icon/delete.png"
-            @click="deleteTaskList(taskList.id, index)"
-          />
-        </div>
+  <div
+    class="menu-block"
+    ref="taskListName"
+    @mouseover="showScrollbar = true"
+    @mouseout="showScrollbar = false"
+  >
+    <div class="menu-block__account-info">
+      <div
+        class="text menu-block__title"
+        :style="{ width: `${taskBlockWidth - 32 - 20}px` }"
+      >
+        {{ loggedInAccount }}
       </div>
-    </transition-group>
+      <img
+        class="menu-block__logout-button"
+        src="@/icon/log-out-icon.png"
+        @click="logOut"
+      />
+    </div>
+    <div class="all-lists" ref="allLists">
+      <transition-group name="list-catalog" tag="div" appear>
+        <div v-for="(taskList, index) in taskListCatalog" :key="index">
+          <div class="list-catalog" :style="listStyles">
+            <div
+              class="list-catalog__list-name text"
+              @click="selectedList = taskList"
+            >
+              {{ taskList.title }}
+            </div>
+
+            <img
+              class="list-catalog__delete-button"
+              src="@/icon/delete.png"
+              @click="deleteTaskList(taskList.id, index)"
+            />
+          </div>
+        </div>
+      </transition-group>
+    </div>
     <button
       class="text menu-block__create-button"
       v-if="!addingTask"
@@ -37,26 +51,27 @@
         type="text"
         v-model="taskListName"
         v-focus
+        @keydown.enter="saveTaskList"
+        @keydown.esc="cancelInputField"
       />
-      <button
+      <img
         class="add-new-list-field__cancel-button"
+        src="@/icon/delete.png"
         @click="cancelInputField"
-      >
-        ✕
-      </button>
-      <button @click="saveTaskList">
-        <img
-          class="add-new-list-field__save-button"
-          src="../icon/saveIcon.png"
-          alt=""
-        />
-      </button>
+      />
+
+      <img
+        class="add-new-list-field__save-button"
+        src="../icon/saveIcon.png"
+        alt=""
+        @click="saveTaskList"
+      />
     </div>
   </div>
 </template>
 <script>
 import focusDirective from "../directives/focus.js";
-import { v4 as uuidv4 } from "uuid";
+import apiService from "@/apiService";
 export default {
   directives: {
     focus: focusDirective,
@@ -68,6 +83,10 @@ export default {
       taskListName: "",
       taskBlockWidth: 0,
       selectedList: [],
+      loggedInAccount: "",
+      showScrollbar: false,
+      isScrollbarVisible: true,
+      userId: 0,
     };
   },
   emits: {
@@ -75,66 +94,165 @@ export default {
   },
   props: {},
   created() {
-    const taskListCatalogData = localStorage.getItem("taskListCatalog");
-    if (taskListCatalogData) {
-      this.taskListCatalog = JSON.parse(taskListCatalogData);
-      this.selectedList = this.taskListCatalog[0];
+    let data = localStorage.getItem("loggedInUser");
+    if (data) {
+      this.loggedInAccount = data;
     } else {
-      this.selectedList = undefined;
+      data = sessionStorage.getItem("loggedInUser");
+      this.loggedInAccount = data;
     }
+    apiService
+      .getUserIdByEmail(this.loggedInAccount)
+      .then((response) => {
+        this.userId = response.data.userId;
+        this.getListCatalogByUserIdFromDB();
+      })
+
+      .catch((error) => {
+        console.error("Ошибка при получении данных:", error);
+      });
   },
   mounted() {
     this.taskBlockWidth = this.$refs.taskListName.clientWidth;
   },
+  computed: {
+    listStyles() {
+      return {
+        width: `${this.taskBlockWidth - 20 - 8}px`,
+        marginRight:
+          this.showScrollbar && this.isScrollbarVisible ? "0px" : "8px",
+      };
+    },
+
+  },
   methods: {
+    updateTaskListInDB(id, title) {
+      apiService
+        .updateTaskList(id, title)
+        .then(() => {})
+        .catch((error) => {
+          console.error("Ошибка при обновлении списка задач:", error);
+        });
+    },
+    getListCatalogByUserIdFromDB() {
+      apiService
+        .getAllTaskListsByUserId(this.userId)
+        .then((response) => {
+          this.taskListCatalog = response.data;
+          if (this.taskListCatalog[0]) {
+            this.selectedList = this.taskListCatalog[0];
+          } else {
+            this.selectedList = undefined;
+          }
+        })
+        .catch((error) => {
+          console.error("Ошибка при получении данных:", error);
+        });
+    },
+    checkScrollbarVisibility() {
+      const element = this.$refs.allLists;
+
+      if (element.scrollHeight > element.clientHeight) {
+        this.isScrollbarVisible = true;
+      } else {
+        this.isScrollbarVisible = false;
+      }
+    },
+    logOut() {
+      localStorage.removeItem("loggedInUser");
+      sessionStorage.removeItem("loggedInUser");
+      location.reload();
+    },
     cancelInputField() {
       this.taskListName = "";
       this.addingTask = false;
     },
     saveTaskList() {
       if (this.taskListName) {
-        const listId = uuidv4();
+        const newListData = {
+          title: this.taskListName,
+          user_id: this.userId,
+        };
 
-        this.taskListCatalog.push({ listName: this.taskListName, id: listId });
-        this.selectedList =
-          this.taskListCatalog[this.taskListCatalog.length - 1];
+        apiService
+          .createTaskList(newListData)
+          .then(() => {
+            this.getListCatalogByUserIdFromDB();
+          })
+          .catch((error) => {
+            console.error("Ошибка при создании списка задач:", error);
+          });
       }
-
       this.taskListName = "";
       this.addingTask = false;
     },
     deleteTaskList(taskListId, index) {
-      this.taskListCatalog = this.taskListCatalog.filter(
-        (list) => list.id !== taskListId
-      );
-      this.deleteFromLocalStorage(taskListId);
+
+      apiService
+        .deleteAllUncompletedTasksFromDB(taskListId)
+        .then(() => {
+          apiService
+            .deleteAllCompletedTasksFromDB(taskListId)
+            .then(() => {
+              apiService
+                .deleteTaskList(taskListId)
+                .then(() => {
+                  this.getListCatalogByUserIdFromDB();
+                })
+                .catch((error) => {
+                  console.error("Ошибка при создании списка задач:", error);
+                });
+            })
+            .catch((error) => {
+              console.error(
+                "Ошибка при удалении всех решенных задач, связанных с удаляемым списком:",
+                error
+              );
+            });
+        })
+        .catch((error) => {
+          console.error(
+            "Ошибка при удалении всех нерешенных задач, связанных с удаляемым списком:",
+            error
+          );
+        });
+
+
       if (this.taskListCatalog[index]) {
         this.selectedList = this.taskListCatalog[index];
       } else {
         this.selectedList = this.taskListCatalog[0];
       }
     },
-    deleteFromLocalStorage(taskListId) {
-      localStorage.removeItem(`${taskListId} solved`);
-      localStorage.removeItem(`${taskListId} unsolved`);
-    },
+
   },
   watch: {
     taskListCatalog: {
       handler() {
-        localStorage.setItem(
-          "taskListCatalog",
-          JSON.stringify(this.taskListCatalog)
-        );
+        this.$nextTick(() => {
+          this.checkScrollbarVisibility();
+        });
+        if (this.taskListCatalog.length === 0) {
+          this.selectedList = undefined;
+        }
       },
       deep: true,
     },
-    selectedList() {
-      if (this.selectedList === undefined) {
-        this.selectedList = { listName: "Not selected", id: -1 };
-      }
+    selectedList: {
+      handler(newValue, oldValue) {
+        // handler() {
+        if (newValue && oldValue) {
+          if (newValue.id === oldValue.id) {
+            this.updateTaskListInDB(newValue.id, newValue.title);
+          }
+        }
+        if (this.selectedList === undefined) {
+          this.selectedList = { listName: "Not selected", id: -1 };
+        }
 
-      this.$emit("selectedList", this.selectedList);
+        this.$emit("selectedList", this.selectedList);
+      },
+      deep: true,
     },
   },
 };
@@ -143,28 +261,34 @@ export default {
 .list-catalog-move,
 .list-catalog-leave-active,
 .list-catalog-enter-active {
-  transition: all 0.5s ease;
+  transition: opacity 0.5s ease;
 }
 .list-catalog-leave-active {
 }
 .list-catalog-enter-from {
   opacity: 0;
-  transform: translateX(30px);
 }
 .list-catalog-leave-to {
   opacity: 0;
 }
 .menu-block {
   background-color: rgb(31, 188, 211);
-
+  padding: 5px 10px 0px;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
+.menu-block__account-info {
+  display: flex;
+  align-items: center;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  border-radius: 10px;
+}
 .menu-block__title {
   width: 100%;
-  padding: 15px;
+  padding: 10px;
+  border-radius: 10px;
 }
 .text {
   background-color: rgb(31, 188, 211);
@@ -175,18 +299,47 @@ export default {
   text-overflow: ellipsis;
   color: #fff;
 }
+.menu-block__logout-button {
+  height: 32px;
+}
+.all-lists {
+  margin: 10px 0px;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  flex: 1 1 0;
+}
+
+.all-lists::-webkit-scrollbar {
+  width: 8px;
+}
+.menu-block:hover .all-lists {
+  overflow-y: auto;
+}
+.all-lists::-webkit-scrollbar-thumb {
+  background-color: white;
+  border-radius: 4px;
+}
+
+.all-lists::-webkit-scrollbar-thumb:hover {
+  background-color: gray;
+}
+
+.all-lists::-webkit-scrollbar-track {
+  background-color: #dddcdc;
+  border-radius: 4px;
+}
 .list-catalog {
   display: flex;
-  height: 40px;
+  align-items: center;
   position: relative;
-  /* width: 300px; */
 }
 
 .list-catalog__list-name {
   flex: 1 1 0;
 }
 .list-catalog__delete-button {
-  width: 40px;
+  width: 32px;
+  height: 32px;
 }
 .menu-block__create-button {
   box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
@@ -195,23 +348,30 @@ export default {
   width: 100%;
   margin-left: 5px;
   margin-right: 5px;
+  margin-bottom: 5px;
 }
 .add-new-list-field {
-  height: 40px;
   display: flex;
   width: 100%;
   padding: 0px 5px;
+  margin-bottom: 5px;
+  gap: 5px;
+  align-items: center;
 }
 .add-new-list-field__input {
   background-color: rgb(31, 188, 211);
   color: #fff;
   font-size: 36px;
   width: 100%;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  padding: 5px;
+  border-radius: 10px;
 }
 .add-new-list-field__cancel-button {
-  width: 40px;
+  height: 32px;
 }
 .add-new-list-field__save-button {
-  height: 40px;
+  background-color: rgb(31, 188, 211);
+  height: 32px;
 }
 </style>

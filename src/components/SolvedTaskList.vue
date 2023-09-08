@@ -13,7 +13,7 @@ export default {
       required: true,
     },
     taskListId: {
-      type: String,
+      type: Number,
       required: true,
     },
   },
@@ -34,10 +34,6 @@ export default {
           this.solvedTasks.length - this.$options.maxTasksInList
         );
       }
-      localStorage.setItem(
-        `${this.taskListId} solved`,
-        JSON.stringify(this.solvedTasks)
-      );
     },
   },
 };

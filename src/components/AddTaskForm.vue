@@ -7,9 +7,12 @@
         @keydown.enter="add"
         class="input-wrapper__input"
       />
-      <button @click="taskTitle = ''" class="input-wrapper__clear-button">
-        X
-      </button>
+
+      <img
+        src="@/icon/delete.png"
+        @click="taskTitle = ''"
+        class="input-wrapper__clear-button"
+      />
       <img
         src="../icon/voice-button.png"
         v-if="isEnabledSpeechApi"
@@ -67,20 +70,27 @@ export default {
   flex: 1;
   font-size: 36px;
   background-color: transparent;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  margin: 5px;
+  border-radius: 10px;
+  color: #fff;
+  padding: 5px;
 }
 
 .input-wrapper__clear-button {
   color: #fff;
   background-color: transparent;
   border: 0;
-  font-size: 36px;
 }
 
 .input-wrapper__add-button {
   color: #fff;
   margin-top: 10px;
-  padding: 10px 0px;
+  padding: 5px;
   font-size: 36px;
   background-color: transparent;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+  border-radius: 10px;
+  margin: 5px;
 }
 </style>
