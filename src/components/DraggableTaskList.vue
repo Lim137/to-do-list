@@ -1,69 +1,59 @@
 <template>
-  <draggable-block
-    v-model="unsolvedTasks"
-    group="task-list"
-    :options="dragOptions"
-    item-key="id"
-  >
-    <template #item="{ element }">
-      <div>
-        <div v-if="!element.editing">
-          <div class="task">
-            <label class="task__text">
-              <input
-                type="checkbox"
-                name="task"
-                :id="element.id"
-                v-model="element.checked"
-              />
-              <span @click="$emit('editTask', element)">{{
-                element.title
-              }}</span>
-            </label>
+  <div class="tasks-block">
+    <draggable-block
+      v-model="unsolvedTasks"
+      group="task-list"
+      :options="dragOptions"
+      item-key="id"
+      @end="$emit('taskMoved')"
+    >
+      <template #item="{ element }">
+        <div>
+          <div v-if="!element.editing">
+            <div class="task">
+              <label class="task__text">
+                <input
+                  type="checkbox"
+                  name="task"
+                  :id="element.id"
+                  v-model="element.checked"
+                />
+                <span @click="$emit('editTask', element)">{{
+                  element.title
+                }}</span>
+              </label>
+            </div>
           </div>
-        </div>
-        <div v-if="element.editing" class="edit-block">
-          <input
-            class="edit-block__editing-field"
-            type="text"
-            v-model="element.editingText"
-            v-focus
-            @keydown.esc="$emit('cancelEdit', element)"
-            @keydown.enter="$emit('saveTask', element)"
+
+          <text-edit-block
+            v-if="element.editing"
+            :taskFromApp="element"
+            @cancelEdit="$emit('cancelEdit', element)"
+            @saveTask="$emit('saveTask', element)"
           />
-          <button
-            class="edit-block__save-button"
-            @click="$emit('saveTask', element)"
-          >
-            Save
-          </button>
-          <button
-            class="edit-block__cancel-button"
-            @click="$emit('cancelEdit', element)"
-          >
-            Cancel
-          </button>
         </div>
-      </div>
-    </template>
-  </draggable-block>
-  <button @click="$emit('solveTasks', checkedTasks)" class="edit-button">
-    solve
-  </button>
-  <button
-    class="task__delete-button"
-    @click="$emit('deleteTasks', checkedTasks)"
-  >
-    delete
-  </button>
+      </template>
+    </draggable-block>
+    <button @click="$emit('solveTasks', checkedTasks)" class="edit-button">
+      solve
+    </button>
+    <button
+      class="task__delete-button"
+      @click="$emit('deleteTasks', checkedTasks)"
+    >
+      delete
+    </button>
+  </div>
 </template>
 
 <script>
 import draggableBlock from "vuedraggable";
 import focusDirective from "../directives/focus.js";
+import TextEditBlock from "./TextEditBlock.vue";
 export default {
   components: {
     draggableBlock,
+    TextEditBlock,
   },
   directives: {
     focus: focusDirective,
@@ -101,8 +91,8 @@ export default {
     editTask: (task) => typeof task === "object",
     cancelEdit: (task) => typeof task === "object",
     saveTask: (task) => typeof task === "object",
+    taskMoved: null,
   },
-
   watch: {
     unsolvedTasks: {
       handler() {
@@ -118,8 +108,14 @@ export default {
 </script>
 
 <style scoped>
+.tasks-block {
+  padding: 10px;
+}
 .task {
   display: flex;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  border-radius: 10px;
+  padding: 10px;
   gap: 5px;
   margin-bottom: 5px;
 }
@@ -130,7 +126,7 @@ button {
   background-color: rgb(31, 188, 211);
   color: #fff;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
@@ -145,6 +141,7 @@ button:active {
 
 .task__text {
   display: flex;
+  font-size: 36px;
   flex: 1 1 0;
   white-space: nowrap;
   overflow: hidden;

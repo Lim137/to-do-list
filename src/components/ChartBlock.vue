@@ -1,7 +1,7 @@
 <template>
   <div>
     <div>
-      <Pie :data="data" :options="options" class="pie" />
+      <Pie :data="chartData" :options="options" class="pie" />
     </div>
   </div>
 </template>
@@ -9,7 +9,6 @@
 <script>
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Pie } from "vue-chartjs";
-// import * as chartConfig from "./chartConfig.js";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -30,23 +29,30 @@ export default {
   },
   data() {
     return {
-      data: {
-        labels: ["TO DO", "DONE"],
-        datasets: [
-          {
-            backgroundColor: ["#fff", "#29dff7"],
-            data: [
-              this.$props.lengthUnsolvedTasks,
-              this.$props.lengthSolvedTasks,
-            ],
-          },
-        ],
-      },
       options: {
         responsive: true,
         maintainAspectRatio: false,
       },
     };
+  },
+  computed: {
+    chartData() {
+      return {
+        labels: ["TO DO", "DONE"],
+        datasets: [
+          {
+            backgroundColor: ["#fff", "#29dff7"],
+            data: [this.quantityUnsolvedTasks, this.quantitySolvedTasks],
+          },
+        ],
+      };
+    },
+    quantityUnsolvedTasks() {
+      return this.lengthUnsolvedTasks;
+    },
+    quantitySolvedTasks() {
+      return this.lengthSolvedTasks;
+    },
   },
 };
 </script>

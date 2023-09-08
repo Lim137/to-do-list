@@ -50,10 +50,6 @@ export default {
   padding: 5px;
   height: 40px;
 }
-/* .filter-block__title {
-  font-size: 36px;
-  margin-right: 8px;
-} */
 .filter-block__input-field {
   flex: 1;
   padding: 5px;
@@ -76,7 +72,6 @@ export default {
   font-size: 26px;
   border-radius: 50%;
   cursor: pointer;
-  /* margin-left: 10px; */
   display: flex;
   align-items: center;
   justify-content: center;

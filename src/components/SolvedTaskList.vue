@@ -12,6 +12,10 @@ export default {
       type: Object,
       required: true,
     },
+    taskListId: {
+      type: Number,
+      required: true,
+    },
   },
   data() {
     return {
@@ -30,7 +34,6 @@ export default {
           this.solvedTasks.length - this.$options.maxTasksInList
         );
       }
-      localStorage.setItem("solvedTasks", JSON.stringify(this.solvedTasks));
     },
   },
 };
@@ -38,12 +41,18 @@ export default {
 
 <style scoped>
 .task-wrapper {
-  padding: 10px 0px;
+  padding: 10px;
 }
 .task {
+  display: flex;
+  align-items: center;
+
   font-size: 36px;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  border-radius: 10px;
   border: 0;
-  padding-bottom: 15px;
+  padding: 5px;
+  margin-bottom: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
