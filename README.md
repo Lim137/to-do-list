@@ -30,8 +30,9 @@ cd backend
 npm install
 ```
 
-## add a file with information about the database
-## The file name should be db.js. This file should be located in the folder backend.
+## add a file with information about the database. The file name should be db.js. This file should be located in the folder backend.
+## Sample file contents
+
 ```
 const { Pool } = require("pg");
 
@@ -43,6 +44,12 @@ const pool = new Pool({
   port: 5432,
 });
 module.exports = pool;
+```
+
+## run server
+
+```
+node server.js
 ```
 
 ### Customize configuration
