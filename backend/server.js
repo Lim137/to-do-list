@@ -35,7 +35,7 @@ app.post("/register", async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const query =
-      "INSERT INTO users (first_name, last_name, email, password) VALUES ($1, $2, $3, $4)";
+      "INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)";
     await pool.query(query, [firstName, lastName, email, hashedPassword]);
 
     res.status(201).json({ message: "User registered successfully" });
@@ -48,7 +48,7 @@ app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const query = "SELECT * FROM users WHERE email = $1";
+    const query = "SELECT * FROM users WHERE email = ?";
     const result = await pool.query(query, [email]);
 
     if (result.rows.length === 0) {
@@ -74,16 +74,10 @@ app.post("/tasks/create", async (req, res) => {
 
   try {
     const query =
-      "INSERT INTO tasks (user_id, task_name, task_description) VALUES ($1, $2, $3) RETURNING *";
-    const result = await pool.query(query, [
-      user_id,
-      task_name,
-      task_description,
-    ]);
+      "INSERT INTO tasks (user_id, task_name, task_description) VALUES (?, ?, ?)";
+    await pool.query(query, [user_id, task_name, task_description]);
 
-    res
-      .status(201)
-      .json({ message: "Task created successfully", task: result.rows[0] });
+    res.status(201).json({ message: "Task created successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "An error occurred" });
@@ -94,7 +88,7 @@ app.get("/tasks/:user_id", async (req, res) => {
   const user_id = req.params.user_id;
 
   try {
-    const query = "SELECT * FROM tasks WHERE user_id = $1";
+    const query = "SELECT * FROM tasks WHERE user_id = ?";
     const result = await pool.query(query, [user_id]);
 
     res.status(200).json(result.rows);
@@ -107,7 +101,7 @@ app.get("/getUserByEmail/:email", async (req, res) => {
   try {
     const { email } = req.params;
 
-    const user = await pool.query("SELECT id FROM users WHERE email = $1", [
+    const user = await pool.query("SELECT id FROM users WHERE email = ?", [
       email,
     ]);
 

@@ -4,14 +4,15 @@ const pool = require("../db");
 const createTaskList = async (req, res) => {
   try {
     const { title, user_id } = req.body;
-    const query =
-      "INSERT INTO tasklists (title, user_id) VALUES ($1, $2) RETURNING *";
+    const query = "INSERT INTO tasklists (title, user_id) VALUES (?, ?)";
     const values = [title, user_id];
-    const result = await pool.query(query, values);
-    res.status(201).json(result.rows[0]);
+    await pool.query(query, values);
+    res.status(201).json({ message: "Tasklist created successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "An error occurred" });
+    res
+      .status(500)
+      .json({ error: "An error occurred when try to create tasklist" });
   }
 };
 
@@ -20,9 +21,9 @@ const getAllTaskListsByUserId = async (req, res) => {
   try {
     const { id } = req.params;
     const query =
-      "SELECT list_id as id, title FROM tasklists WHERE user_id = $1 ORDER BY list_id";
+      "SELECT list_id as id, title FROM tasklists WHERE user_id = ? ORDER BY list_id";
     const result = await pool.query(query, [id]);
-    res.status(200).json(result.rows);
+    res.status(200).json(result[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "An error occurred" });
@@ -33,12 +34,12 @@ const getAllTaskListsByUserId = async (req, res) => {
 const getTaskListById = async (req, res) => {
   try {
     const { id } = req.params;
-    const query = "SELECT * FROM tasklists WHERE id = $1";
+    const query = "SELECT * FROM tasklists WHERE id = ?";
     const result = await pool.query(query, [id]);
-    if (result.rows.length === 0) {
+    if (result[0].length === 0) {
       return res.status(404).json({ error: "Task list not found" });
     }
-    res.status(200).json(result.rows[0]);
+    res.status(200).json(result[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "An error occurred" });
@@ -50,17 +51,15 @@ const updateTaskList = async (req, res) => {
   try {
     const { id } = req.params;
     const { title } = req.body;
-    const query =
-      "UPDATE tasklists SET title = $1 WHERE list_id = $2 RETURNING *";
+    const query = "UPDATE tasklists SET title = ? WHERE list_id = ?";
     const values = [title, id];
-    const result = await pool.query(query, values);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Task list not found" });
-    }
-    res.status(200).json(result.rows[0]);
+    await pool.query(query, values);
+    res.status(200).json({ message: "tasklist updated successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "An error occurred" });
+    res
+      .status(500)
+      .json({ error: "An error occurred when try to update tasklist" });
   }
 };
 
@@ -68,15 +67,14 @@ const updateTaskList = async (req, res) => {
 const deleteTaskList = async (req, res) => {
   try {
     const { id } = req.params;
-    const query = "DELETE FROM tasklists WHERE list_id = $1 RETURNING *";
-    const result = await pool.query(query, [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Task list not found" });
-    }
-    res.status(200).json(result.rows[0]);
+    const query = "DELETE FROM tasklists WHERE list_id = ?";
+    await pool.query(query, [id]);
+    res.status(200).json({ message: "Tasklist deleted successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "An error occurred" });
+    res
+      .status(500)
+      .json({ error: "An error occurred when try to delete tasklist" });
   }
 };
 
