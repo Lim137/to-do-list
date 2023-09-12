@@ -854,5 +854,4 @@ go to the server folderSample file contents .chart-block__chart {
   font-size: 40px;
   color: #fff;
 }
-/* Что-то с сортировкой решенных задач, почему то при массовом решении задач без перезагрузки страницы дублируется однга задача в списке решенных */
 </style>
