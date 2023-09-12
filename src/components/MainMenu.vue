@@ -24,16 +24,22 @@
           <div class="list-catalog" :style="listStyles">
             <div
               class="list-catalog__list-name text"
+              :class="{
+                'list-catalog__selected-list': selectedList === taskList,
+              }"
               @click="selectedList = taskList"
             >
               {{ taskList.title }}
             </div>
-
-            <img
-              class="list-catalog__delete-button"
-              src="@/icon/delete.png"
-              @click="deleteTaskList(taskList.id, index)"
-            />
+            <div class="list-catalog__delete-button-field">
+              <div>
+                <img
+                  class="list-catalog__delete-button"
+                  src="@/icon/delete.png"
+                  @click="deleteTaskList(taskList.id, index)"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </transition-group>
@@ -120,10 +126,9 @@ export default {
       return {
         width: `${this.taskBlockWidth - 20 - 8}px`,
         marginRight:
-          this.showScrollbar && this.isScrollbarVisible ? "0px" : "8px",
+          this.showScrollbar && this.isScrollbarVisible ? "2px" : "10px",
       };
     },
-
   },
   methods: {
     updateTaskListInDB(id, title) {
@@ -187,7 +192,6 @@ export default {
       this.addingTask = false;
     },
     deleteTaskList(taskListId, index) {
-
       apiService
         .deleteAllUncompletedTasksFromDB(taskListId)
         .then(() => {
@@ -217,14 +221,12 @@ export default {
           );
         });
 
-
       if (this.taskListCatalog[index]) {
         this.selectedList = this.taskListCatalog[index];
       } else {
         this.selectedList = this.taskListCatalog[0];
       }
     },
-
   },
   watch: {
     taskListCatalog: {
@@ -253,6 +255,9 @@ export default {
         this.$emit("selectedList", this.selectedList);
       },
       deep: true,
+    },
+    userId() {
+      console.log(this.userId);
     },
   },
 };
@@ -328,19 +333,50 @@ export default {
   background-color: #dddcdc;
   border-radius: 4px;
 }
-.list-catalog {
+/* .list-catalog {
   display: flex;
   align-items: center;
   position: relative;
+  margin-bottom: 10px;
+  padding-left: 10px;
+  padding-right: 2px;
+  height: 100%;
+} */
+.list-catalog {
+  display: grid; /* Используем grid контейнер */
+  grid-template-columns: 1fr auto; /* Два столбца: один занимает всю доступную ширину, второй минимальной ширины */
+  position: relative;
+  margin-bottom: 10px;
+  margin-left: 10px;
+  margin-right: 2px;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  border-radius: 10px;
+}
+.all-lists:last-child {
+  margin-bottom: 0px;
+}
+.list-catalog__list-name {
+  padding: 5px;
+  border-radius: 10px 0px 0px 10px;
 }
 
-.list-catalog__list-name {
-  flex: 1 1 0;
+.list-catalog__delete-button-field {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: red;
+  border-radius: 0px 10px 10px 0px;
 }
+
 .list-catalog__delete-button {
   width: 32px;
-  height: 32px;
+  height: 32px; /* Установите фиксированную высоту для кнопки */
 }
+
+.list-catalog__selected-list {
+  background-color: #1595ac;
+}
+
 .menu-block__create-button {
   box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
   border-radius: 10px;

@@ -228,15 +228,15 @@ export default {
         return 0;
       }
     },
-    normalizedSolvedTasksList() {
-      if (this.solvedTasks.length > this.$options.maxTasksInList) {
-        return this.solvedTasks.slice(
-          this.solvedTasks.length - this.$options.maxTasksInList
-        );
-      } else {
-        return this.solvedTasks;
-      }
-    },
+    // normalizedSolvedTasksList() {
+    //   if (this.solvedTasks.length > this.$options.maxTasksInList) {
+    //     return this.solvedTasks.slice(
+    //       this.solvedTasks.length - this.$options.maxTasksInList
+    //     );
+    //   } else {
+    //     return this.solvedTasks;
+    //   }
+    // },
   },
 
   methods: {
@@ -326,18 +326,29 @@ export default {
           console.error("Ошибка при получении данных:", error);
         });
     },
-    readLastSolvedUnsolvedTask() {
-      apiService
-        .getAllCompletedTasksByListId(this.selectedList.id)
-        .then((response) => {
-          const data = response.data;
-          const lastSolvedTask = data[data.length - 1];
+    async readLastSolvedTask() {
+      // apiService
+      //   .getAllCompletedTasksByListId(this.selectedList.id)
+      //   .then((response) => {
+      //     const data = response.data;
+      //     const lastSolvedTask = data[data.length - 1];
 
-          this.solvedTasks.push(lastSolvedTask);
-        })
-        .catch((error) => {
-          console.error("Ошибка при получении данных:", error);
-        });
+      //     this.solvedTasks.push(lastSolvedTask);
+      //   })
+      //   .catch((error) => {
+      //     console.error("Ошибка при получении данных:", error);
+      //   });
+      try {
+        const response = await apiService.getAllCompletedTasksByListId(
+          this.selectedList.id
+        );
+        const data = response.data;
+        const lastSolvedTask = data[data.length - 1];
+
+        this.solvedTasks.push(lastSolvedTask);
+      } catch (error) {
+        console.error("Ошибка при получении данных:", error);
+      }
     },
     updateAllSolvedTasksInDB() {
       apiService
@@ -371,8 +382,10 @@ export default {
         this.editingTasks = false;
       }
     },
-    massSolve(tasks) {
-      tasks.forEach((task) => this.solveTask(task));
+    async massSolve(tasks) {
+      for (const task of tasks) {
+        await this.solveTask(task);
+      }
       if (this.unsolvedTasks.length === 0) {
         this.editingTasks = false;
       }
@@ -448,30 +461,70 @@ export default {
       }
       return true;
     },
-    solveTask(task) {
+    async solveTask(task) {
+      // const { list_id, title } = task;
+      // const solvedTask = { list_id, title };
+      // if (this.selectedList.id === -1) {
+      //   return;
+      // }
+      // apiService
+      //   .addCompletedTask(solvedTask)
+      //   .then(() => {
+      //     this.readLastSolvedTask();
+      //   })
+      //   .catch((error) => {
+      //     console.error("Ошибка при решении задачи:", error);
+      //   });
+      // this.unsolvedTasks = this.unsolvedTasks.filter((t) => t.id !== task.id);
+      // apiService
+      //   .deleteTask(task.id)
+      //   .then(() => {})
+      //   .catch((error) => {
+      //     console.error(
+      //       "Ошибка при удалении решенной задачи из списка нерешенных:",
+      //       error
+      //     );
+      //   });
+      // const { list_id, title } = task;
+      // const solvedTask = { list_id, title };
+
+      // if (this.selectedList.id === -1) {
+      //   return;
+      // }
+
+      // try {
+      //   await apiService.addCompletedTask(solvedTask);
+
+      //   await this.readLastSolvedTask();
+      //   this.unsolvedTasks = this.unsolvedTasks.filter((t) => t.id !== task.id);
+      //   await apiService.deleteTask(task.id);
       const { list_id, title } = task;
       const solvedTask = { list_id, title };
+
       if (this.selectedList.id === -1) {
         return;
       }
-      apiService
-        .addCompletedTask(solvedTask)
-        .then(() => {
-          this.readLastSolvedUnsolvedTask();
-        })
-        .catch((error) => {
-          console.error("Ошибка при решении задачи:", error);
-        });
-      this.unsolvedTasks = this.unsolvedTasks.filter((t) => t !== task);
-      apiService
-        .deleteTask(task.id)
-        .then(() => {})
-        .catch((error) => {
-          console.error(
-            "Ошибка при удалении решенной задачи из списка нерешенных:",
-            error
+
+      try {
+        await apiService.addCompletedTask(solvedTask);
+
+        await this.readLastSolvedTask();
+        this.unsolvedTasks = this.unsolvedTasks.filter((t) => t.id !== task.id);
+        await apiService.deleteTask(task.id);
+        const completedTaskCount = await apiService.getCountOfCompletedTasks(
+          this.selectedList.id
+        );
+        console.log(completedTaskCount.data.count);
+
+        if (completedTaskCount.data.count > 100) {
+          // Если количество решенных задач больше или равно 100, удалите самую раннюю задачу
+          await apiService.deleteOldestCompletedTaskByListId(
+            this.selectedList.id
           );
-        });
+        }
+      } catch (error) {
+        console.error("Ошибка при решении задачи:", error);
+      }
     },
     saveTask(task) {
       this.unsolvedTasks.forEach((t) => {
@@ -625,12 +678,7 @@ export default {
 }
 
 .page {
-  /* width: 100vh; */
-  background: linear-gradient(
-    137deg,
-    #75f6ff,
-    #14fbff
-  ); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  background: linear-gradient(137deg, #75f6ff, #14fbff);
 }
 .page-blocks {
   display: flex;
@@ -798,7 +846,7 @@ export default {
   flex: 1 1 0;
   align-items: center;
 }
-.chart-block__chart {
+go to the server folderSample file contents .chart-block__chart {
   padding-top: 80px;
   margin-bottom: 10px;
 }
@@ -806,4 +854,5 @@ export default {
   font-size: 40px;
   color: #fff;
 }
+/* Что-то с сортировкой решенных задач, почему то при массовом решении задач без перезагрузки страницы дублируется однга задача в списке решенных */
 </style>

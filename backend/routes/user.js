@@ -8,15 +8,14 @@ router.get("/getUserByEmail/:email", async (req, res) => {
     const { email } = req.params;
 
     // Ищем пользователя по email в базе данных
-    const user = await pool.query("SELECT id FROM users WHERE email = $1", [
+    const user = await pool.query("SELECT id FROM users WHERE email = ?", [
       email,
     ]);
-
-    if (user.rows.length === 0) {
+    if (user[0][0].id === 0) {
       return res.status(404).json({ error: "Пользователь не найден" });
     }
 
-    const userId = user.rows[0].id;
+    const userId = user[0][0].id;
     res.json({ userId });
   } catch (error) {
     console.error("Ошибка при поиске пользователя по email:", error);

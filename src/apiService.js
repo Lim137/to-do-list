@@ -44,4 +44,10 @@ export default {
   deleteAllCompletedTasksFromDB(listId) {
     return apiClient.delete(`/solved/all/${listId}`);
   },
+  getCountOfCompletedTasks(listId) {
+    return apiClient.get(`/solved/quantity/${listId}`);
+  },
+  deleteOldestCompletedTaskByListId(listId){
+    return apiClient.delete(`/solved/oldest/${listId}`);
+  },
 };
