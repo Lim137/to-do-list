@@ -333,18 +333,10 @@ export default {
   background-color: #dddcdc;
   border-radius: 4px;
 }
-/* .list-catalog {
-  display: flex;
-  align-items: center;
-  position: relative;
-  margin-bottom: 10px;
-  padding-left: 10px;
-  padding-right: 2px;
-  height: 100%;
-} */
+
 .list-catalog {
-  display: grid; /* Используем grid контейнер */
-  grid-template-columns: 1fr auto; /* Два столбца: один занимает всю доступную ширину, второй минимальной ширины */
+  display: grid;
+  grid-template-columns: 1fr auto;
   position: relative;
   margin-bottom: 10px;
   margin-left: 10px;
@@ -370,7 +362,7 @@ export default {
 
 .list-catalog__delete-button {
   width: 32px;
-  height: 32px; /* Установите фиксированную высоту для кнопки */
+  height: 32px;
 }
 
 .list-catalog__selected-list {
