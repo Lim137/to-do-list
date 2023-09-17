@@ -95,6 +95,7 @@
 <script>
 import axios from "axios";
 import { useToast } from "vue-toastification";
+import backendServer from "../backendServer";
 export default {
   data() {
     return {
@@ -104,7 +105,7 @@ export default {
       password: "",
     };
   },
-  server: "http://localhost:3000",
+  server: backendServer.serverData[0],
   methods: {
     async registerUser() {
       try {
@@ -120,7 +121,7 @@ export default {
           password: this.password,
         };
         const response = await axios.post(
-          `http://localhost:3000/register`,
+          `${backendServer.serverData[2]}`,
           userData
         );
 
@@ -145,7 +146,7 @@ export default {
       );
     },
     validateField(value, minLength, maxLength) {
-      value = value.trim(); // Удалить начальные и конечные пробелы
+      value = value.trim();
       if (!value || value.length < minLength || value.length > maxLength) {
         const toast = useToast();
         toast.error(

@@ -81,8 +81,8 @@
 
 <script>
 import axios from "axios";
-// import bcrypt from "bcryptjs"; // Импортируйте библиотеку для работы с bcrypt
 import { useToast } from "vue-toastification";
+import backendServer from "../backendServer";
 export default {
   data() {
     return {
@@ -95,8 +95,7 @@ export default {
     async signIn() {
       try {
         const { email, password } = this;
-
-        const response = await axios.post(`http://localhost:3000/login`, {
+        const response = await axios.post(`${backendServer.serverData[1]}`, {
           email: email,
           password: password,
         });

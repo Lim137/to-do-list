@@ -242,14 +242,13 @@ export default {
     },
     selectedList: {
       handler(newValue, oldValue) {
-        // handler() {
         if (newValue && oldValue) {
           if (newValue.id === oldValue.id) {
             this.updateTaskListInDB(newValue.id, newValue.title);
           }
         }
         if (this.selectedList === undefined) {
-          this.selectedList = { listName: "Not selected", id: -1 };
+          this.selectedList = { title: "Not selected", id: -1 };
         }
 
         this.$emit("selectedList", this.selectedList);

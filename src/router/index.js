@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from "vue-router";
 import TaskList from "@/components/TaskTracker.vue";
 import Login from "@/auth/LoginPopup.vue";
 import Register from "@/auth/RegisterPopup.vue";
-
 const routes = [
   {
     path: "/",
@@ -25,7 +24,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(process.env.BASE_URL),
   routes,
 });
 router.beforeEach((to, from, next) => {
