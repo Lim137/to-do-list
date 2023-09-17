@@ -50,13 +50,12 @@ app.post("/login", async (req, res) => {
   try {
     const query = "SELECT * FROM users WHERE email = ?";
     const result = await pool.query(query, [email]);
-
-    if (result.rows.length === 0) {
+    if (result.length === 0) {
       res.status(401).json({ error: "Invalid email or password" });
       return;
     }
 
-    const storedHashedPassword = result.rows[0].password;
+    const storedHashedPassword = result[0][0].password;
     const passwordMatch = await bcrypt.compare(password, storedHashedPassword);
 
     if (passwordMatch) {
@@ -67,52 +66,5 @@ app.post("/login", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "An error occurred" });
-  }
-});
-app.post("/tasks/create", async (req, res) => {
-  const { user_id, task_name, task_description } = req.body;
-
-  try {
-    const query =
-      "INSERT INTO tasks (user_id, task_name, task_description) VALUES (?, ?, ?)";
-    await pool.query(query, [user_id, task_name, task_description]);
-
-    res.status(201).json({ message: "Task created successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "An error occurred" });
-  }
-});
-
-app.get("/tasks/:user_id", async (req, res) => {
-  const user_id = req.params.user_id;
-
-  try {
-    const query = "SELECT * FROM tasks WHERE user_id = ?";
-    const result = await pool.query(query, [user_id]);
-
-    res.status(200).json(result.rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "An error occurred" });
-  }
-});
-app.get("/getUserByEmail/:email", async (req, res) => {
-  try {
-    const { email } = req.params;
-
-    const user = await pool.query("SELECT id FROM users WHERE email = ?", [
-      email,
-    ]);
-
-    if (user.rows.length === 0) {
-      return res.status(404).json({ error: "Пользователь не найден" });
-    }
-
-    const userId = user.rows[0].id;
-    res.json({ userId });
-  } catch (error) {
-    console.error("Ошибка при поиске пользователя по email:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
   }
 });

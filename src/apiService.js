@@ -1,7 +1,8 @@
 import axios from "axios";
+import backendServer from "./backendServer";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: backendServer.serverData[0],
 });
 
 export default {
@@ -47,7 +48,7 @@ export default {
   getCountOfCompletedTasks(listId) {
     return apiClient.get(`/solved/quantity/${listId}`);
   },
-  deleteOldestCompletedTaskByListId(listId){
+  deleteOldestCompletedTaskByListId(listId) {
     return apiClient.delete(`/solved/oldest/${listId}`);
   },
 };

@@ -228,15 +228,6 @@ export default {
         return 0;
       }
     },
-    // normalizedSolvedTasksList() {
-    //   if (this.solvedTasks.length > this.$options.maxTasksInList) {
-    //     return this.solvedTasks.slice(
-    //       this.solvedTasks.length - this.$options.maxTasksInList
-    //     );
-    //   } else {
-    //     return this.solvedTasks;
-    //   }
-    // },
   },
 
   methods: {
@@ -327,17 +318,6 @@ export default {
         });
     },
     async readLastSolvedTask() {
-      // apiService
-      //   .getAllCompletedTasksByListId(this.selectedList.id)
-      //   .then((response) => {
-      //     const data = response.data;
-      //     const lastSolvedTask = data[data.length - 1];
-
-      //     this.solvedTasks.push(lastSolvedTask);
-      //   })
-      //   .catch((error) => {
-      //     console.error("Ошибка при получении данных:", error);
-      //   });
       try {
         const response = await apiService.getAllCompletedTasksByListId(
           this.selectedList.id
@@ -462,42 +442,6 @@ export default {
       return true;
     },
     async solveTask(task) {
-      // const { list_id, title } = task;
-      // const solvedTask = { list_id, title };
-      // if (this.selectedList.id === -1) {
-      //   return;
-      // }
-      // apiService
-      //   .addCompletedTask(solvedTask)
-      //   .then(() => {
-      //     this.readLastSolvedTask();
-      //   })
-      //   .catch((error) => {
-      //     console.error("Ошибка при решении задачи:", error);
-      //   });
-      // this.unsolvedTasks = this.unsolvedTasks.filter((t) => t.id !== task.id);
-      // apiService
-      //   .deleteTask(task.id)
-      //   .then(() => {})
-      //   .catch((error) => {
-      //     console.error(
-      //       "Ошибка при удалении решенной задачи из списка нерешенных:",
-      //       error
-      //     );
-      //   });
-      // const { list_id, title } = task;
-      // const solvedTask = { list_id, title };
-
-      // if (this.selectedList.id === -1) {
-      //   return;
-      // }
-
-      // try {
-      //   await apiService.addCompletedTask(solvedTask);
-
-      //   await this.readLastSolvedTask();
-      //   this.unsolvedTasks = this.unsolvedTasks.filter((t) => t.id !== task.id);
-      //   await apiService.deleteTask(task.id);
       const { list_id, title } = task;
       const solvedTask = { list_id, title };
 
@@ -514,10 +458,8 @@ export default {
         const completedTaskCount = await apiService.getCountOfCompletedTasks(
           this.selectedList.id
         );
-        console.log(completedTaskCount.data.count);
 
         if (completedTaskCount.data.count > 100) {
-          // Если количество решенных задач больше или равно 100, удалите самую раннюю задачу
           await apiService.deleteOldestCompletedTaskByListId(
             this.selectedList.id
           );
@@ -557,19 +499,8 @@ export default {
     },
   },
   watch: {
-    unsolvedTasks: {
-      handler() {
-        if (this.selectedList.id === -1) {
-          return;
-        }
-      },
-      deep: true,
-    },
     selectedList: {
       handler() {
-        if (this.selectedList.id === -1) {
-          return;
-        }
         this.readUnsolvedTasksFromDB();
         this.readSolvedTasksFromDB();
       },

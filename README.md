@@ -1,24 +1,11 @@
 # to-do-list
 
-## Project setup
-```
-npm install
-```
+## Description
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+Fullstack application todo list. JavaScript, Vue 3, Bootstrap, Node.js, MySQL.
 
-### Compiles and minifies for production
-```
-npm run build
-```
+## Preview
 
-### Lints and fixes files
 ```
-npm run lint
+https://www.lim137.ru
 ```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).

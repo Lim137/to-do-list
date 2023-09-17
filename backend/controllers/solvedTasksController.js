@@ -1,6 +1,6 @@
 const pool = require("../db");
 
-// Добавить ноовую решенную задачу
+// Добавить новую решенную задачу
 const addCompletedTask = async (req, res) => {
   try {
     const { list_id, title } = req.body;

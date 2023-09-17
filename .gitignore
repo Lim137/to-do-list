@@ -2,7 +2,7 @@
 node_modules
 /dist
 /backend/db.js
-
+/src/backendServer.js
 # local env files
 .env.local
 .env.*.local
